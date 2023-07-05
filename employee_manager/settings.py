@@ -39,9 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
-    
     'OKR.apps.OkrConfig',
-    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [
