@@ -1,7 +1,7 @@
 .employee/
-.api/__pycache__
-.api/migrations/__pycache__
-.employee_manager/__pycache__
-.OKR/__pycache__
-.OKR/migrations/__pycache__
+.api/__pycache__/
+.api/migrations/__pycache__/
+.employee_manager/__pycache__/
+.OKR/__pycache__/
+.OKR/migrations/__pycache__/
 .employee_manager/settings.py

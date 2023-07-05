@@ -16,7 +16,7 @@ from . import serializers
 def home(request):
     return Response({'message': 'This is home'})
 
-class LogViewSet(viewsets.ModelViewSet):
+class LogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Log.objects.all()
     serializer_class = serializers.LogSerializer
 

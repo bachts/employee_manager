@@ -18,17 +18,17 @@ class OKR(models.Model):
     class Types(models.TextChoices):
         OKR = 'OKR', _('OKR')
         KPI = 'KPI', _('KPI')
-    type = models.CharField(choices=Types.choices, editable=False) #OKR hay KPI
+    type = models.CharField(choices=Types.choices) #OKR hay KPI
 
     class Regularity(models.TextChoices):
         MONTHLY = 'MO', _('MONTHLY')
         QUARTERLY = 'QUAR', _('QUARTERLY')
-    regularity = models.CharField(choices=Regularity.choices, editable=False) #quarterly hay monthly
+    regularity = models.CharField(choices=Regularity.choices) #quarterly hay monthly
 
     class Unit(models.TextChoices):
         NUM = 'NUM', _('NUMERIC')
         CAT = 'CAT', _('CATEGORICAL')
-    unit = models.CharField(choices=Unit.choices, editable=False) # don vi
+    unit = models.CharField(choices=Unit.choices) # don vi
 
     class Condition(models.TextChoices):
         L = 'LESS', _('LESS THAN')
@@ -60,10 +60,10 @@ class OKR(models.Model):
     status = models.CharField(choices=Status.choices, 
                               default=Status.P)
 
-    created_by = models.CharField(max_length=30, editable=False)
+    created_by = models.CharField(max_length=30)
     updated_by = models.CharField(max_length=30, default=None)
 
-    created_at = models.DateTimeField(auto_now=True, editable=False)
+    created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(auto_now_add=True)
 
     deadline = models.DateTimeField()
