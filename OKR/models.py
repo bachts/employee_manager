@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 # Create your models here.
 class OKR(models.Model):
     id = models.BigAutoField(primary_key=True)
+
+    note = models.TextField(max_length=200, null=True, blank=True)
+
     objective = models.ForeignKey('Objective', null=True, on_delete=models.SET_NULL)
 
     key_result_1 = models.TextField(max_length=200, blank=False, null=True)
@@ -60,17 +63,17 @@ class OKR(models.Model):
     status = models.CharField(choices=Status.choices, 
                               default=Status.P)
 
-    created_by = models.CharField(max_length=30)
-    updated_by = models.CharField(max_length=30, default=None)
+    created_by = models.CharField(max_length=30, editable=False)
+    updated_by = models.CharField(max_length=30, default=None, null=True)
 
-    created_at = models.DateTimeField(auto_now=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now=True, editable=False)
+    updated_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     deadline = models.DateTimeField()
     # files = ArrayField(base_field=models.URLField(max_length=200), size=5)
-    files = models.URLField(max_length=200)
+    files = models.URLField(max_length=200, null=True, blank=True)
     def __str__(self) -> int:
-        return self.id
+        return self.note
 
     def is_approved(self) -> bool:
         return self.status != self.Status.P
@@ -78,15 +81,15 @@ class OKR(models.Model):
 
 class Objective(models.Model):
     id = models.BigAutoField(primary_key=True)
-    objective_name = models.CharField(max_length=50, null=False)
-    objective_content = models.TextField(max_length=200)
+    objective_name = models.CharField(max_length=50)
+    objective_content = models.TextField(max_length=200, default='To be filled')
 
     def __str__(self) -> str:
         return self.objective_name
 
 class Formula(models.Model):
     id = models.BigAutoField(primary_key=True)
-    formula_name = models.CharField(max_length=50, null=False)
+    formula_name = models.CharField(max_length=50)
     formula_value = models.SlugField(max_length=50)
 
     def __str__(self) -> str:
@@ -101,10 +104,10 @@ class Source(models.Model): #nguoi giao
   
 class Log(models.Model):
     id = models.BigAutoField(primary_key=True)
-    okr_id = models.ForeignKey(OKR, on_delete=models.CASCADE)
+    okr = models.ForeignKey(OKR, on_delete=models.CASCADE)
     note = models.TextField(max_length=200)
     created_by = models.CharField(max_length=30)
-    updated_by = models.CharField(max_length=30)
+    updated_by = models.CharField(max_length=30, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

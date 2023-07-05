@@ -22,7 +22,13 @@ class LogViewSet(viewsets.ReadOnlyModelViewSet):
 
 class OkrViewSet(viewsets.ModelViewSet):
     queryset = OKR.objects.all()
-    serializer_class = serializers.OKRSerializer
+    def get_serializer_class(self):
+        print(self.action)
+        if self.action == 'list' or self.action == 'retrieve':
+            return serializers.OKRRetrieve
+        if self.action == 'update' or self.action == 'partial_update':
+            return serializers.OKRUpdate
+        return serializers.OKRCreate
 
 class SourceViewSet(viewsets.ModelViewSet):
     queryset = Source.objects.all()
@@ -35,3 +41,9 @@ class FormulaViewSet(viewsets.ModelViewSet):
 class ObjectiveViewSet(viewsets.ModelViewSet):
     queryset = Objective.objects.all()
     serializer_class = serializers.ObjectiveSerializer
+
+    # def get_serializer_class(self):
+    #     print(self.action)
+    #     if self.action == 'retrieve' or self.action == 'update' or self.action == 'partial_update':
+    #         return serializers.ObjectiveDetail
+    #     return serializers.ObjectiveSerializer
