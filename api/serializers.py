@@ -24,14 +24,24 @@ class OKRSerializer(serializers.ModelSerializer):
         model = models.OKR
         fields = '__all__'
 
-class OKRCreate(serializers.ModelSerializer):
+class OKRFullCreate(serializers.ModelSerializer):
     objective = ObjectiveSerializer()
-    formula = FormulaSerializer()
-    source = SourceSerializer()
-
     class Meta:
         model = models.OKR
         exclude = ['ratio', 'status', 'files']
+        # fields = '__all__'
+
+    def create(self, validated_data):
+        objective_data = validated_data.pop('objective')
+        objective = models.Objective.objects.create(**objective_data)
+        okr = models.OKR.objects.create(objective=objective, **validated_data) 
+        return okr
+    
+class OKRCreate(serializers.ModelSerializer):
+    class Meta:
+        model = models.OKR
+        exclude = ['ratio', 'status', 'files', 'deadline_quarter']
+        
 class OKRRetrieve(serializers.ModelSerializer):
     class Meta:
         model = models.OKR
@@ -39,7 +49,9 @@ class OKRRetrieve(serializers.ModelSerializer):
 class OKRUpdate(serializers.ModelSerializer):
     class Meta:
         model = models.OKR
-        exclude = ['source', 'regularity', 'ratio', 'created_by']
+        exclude = ['objective', 'source', 'regularity', 'ratio', 'created_by', 'deadline_quarter']
+
+
 
 
 # class ObjectiveDetail(serializers.ModelSerializer):

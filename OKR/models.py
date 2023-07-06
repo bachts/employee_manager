@@ -11,12 +11,12 @@ class OKR(models.Model):
 
     objective = models.ForeignKey('Objective', null=True, on_delete=models.SET_NULL)
 
-    key_result_1 = models.TextField(max_length=200, blank=False, null=True)
-    key_result_2 = models.TextField(max_length=200, blank=False, null=True)
-    key_result_3 = models.TextField(max_length=200, blank=False, null=True)
+    key_result_department = models.TextField(max_length=200, blank=False, null=False, default='department')
+    key_result_team = models.TextField(max_length=200, blank=False, null=False, default='team')
+    key_result_personal = models.TextField(max_length=200, blank=False, null=False, default='personal')
 
-    formula = models.ForeignKey('Formula', null=True, on_delete=models.SET_NULL)
-    source = models.ForeignKey('Source', null=True, on_delete= models.SET_NULL)
+    formula = models.ForeignKey('Formula', blank=False, null=True, on_delete=models.SET_NULL)
+    source = models.ForeignKey('Source', blank=False, null=True, on_delete= models.SET_NULL)
     
     class Types(models.TextChoices):
         OKR = 'OKR', _('OKR')
@@ -70,6 +70,14 @@ class OKR(models.Model):
     updated_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     deadline = models.DateTimeField()
+    
+    class Quarter(models.TextChoices):
+        Q1 = 'Q1', _('First Quarter')
+        Q2 = 'Q2', _('Second Quarter')
+        Q3 = 'Q3', _('Third Quarter')
+        Q4 = 'Q4', _('Fourth Quarter')
+    deadline_quarter = models.CharField(choices=Quarter.choices, editable=False)
+    
     # files = ArrayField(base_field=models.URLField(max_length=200), size=5)
     files = models.URLField(max_length=200, null=True, blank=True)
     def __str__(self) -> int:
@@ -77,6 +85,8 @@ class OKR(models.Model):
 
     def is_approved(self) -> bool:
         return self.status != self.Status.P
+    
+
     
 
 class Objective(models.Model):
