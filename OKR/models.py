@@ -3,9 +3,12 @@ from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxValueValidator, MinValueValidator
 from datetime import datetime, timedelta
+from User.models import User
 # Create your models here.
 class OKR(models.Model):
     id = models.BigAutoField(primary_key=True)
+
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
     note = models.TextField(max_length=200, null=True, blank=True)
 
@@ -47,19 +50,23 @@ class OKR(models.Model):
                                  blank=False) #trong so
     result = models.IntegerField(validators=[MaxValueValidator(100),
                                              MinValueValidator(0)],
-                                 blank=False,
+                                 blank=True,
+                                 null=True,
                                  default=None) #ket qua tung phan
 
     ratio = models.IntegerField(validators=[MaxValueValidator(100),
                                             MinValueValidator(0)],
-                                default=None) #weight * result
+                                default=0) #weight * result
     
     class Status(models.TextChoices):
         P = 'P', _('Pending Approval')
         INP = 'INP', _('In Progress')
         OK = 'S', _('Satisfactory')
         NOK = 'NS', _('Not Satisfactory')
-        
+    
+    estimated = models.CharField(max_length=200)
+    actual = models.CharField(max_length=200)
+
     status = models.CharField(choices=Status.choices, 
                               default=Status.P)
 
@@ -72,12 +79,13 @@ class OKR(models.Model):
     deadline = models.DateTimeField()
     
     class Quarter(models.TextChoices):
-        Q1 = 'Q1', _('First Quarter')
-        Q2 = 'Q2', _('Second Quarter')
-        Q3 = 'Q3', _('Third Quarter')
-        Q4 = 'Q4', _('Fourth Quarter')
-    deadline_quarter = models.CharField(choices=Quarter.choices, editable=False)
-    
+        q1 = 'Q1', _('First Quarter')
+        q2 = 'Q2', _('Second Quarter')
+        q3 = 'Q3', _('Third Quarter')
+        q4 = 'Q4', _('Fourth Quarter')
+    deadline_quarter = models.CharField(choices=Quarter.choices, null=True,editable=False)
+    deadline_month = models.IntegerField(editable=False, null=True)
+    deadline_year = models.CharField(editable=False, null=True)
     # files = ArrayField(base_field=models.URLField(max_length=200), size=5)
     files = models.URLField(max_length=200, null=True, blank=True)
     def __str__(self) -> int:

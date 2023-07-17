@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from OKR import models
+from . import models
 
 
 
@@ -28,7 +28,7 @@ class OKRFullCreate(serializers.ModelSerializer):
     objective = ObjectiveSerializer()
     class Meta:
         model = models.OKR
-        exclude = ['ratio', 'status', 'files']
+        exclude = ['ratio', 'status', 'files', 'result']
         # fields = '__all__'
 
     def create(self, validated_data):
@@ -38,9 +38,10 @@ class OKRFullCreate(serializers.ModelSerializer):
         return okr
     
 class OKRCreate(serializers.ModelSerializer):
+
     class Meta:
         model = models.OKR
-        exclude = ['ratio', 'status', 'files', 'deadline_quarter']
+        exclude = ['ratio', 'status', 'files', 'result']
         
 class OKRRetrieve(serializers.ModelSerializer):
     class Meta:
@@ -49,7 +50,7 @@ class OKRRetrieve(serializers.ModelSerializer):
 class OKRUpdate(serializers.ModelSerializer):
     class Meta:
         model = models.OKR
-        exclude = ['objective', 'source', 'regularity', 'ratio', 'created_by', 'deadline_quarter']
+        exclude = ['objective', 'source', 'regularity', 'ratio', 'created_by']
 
 
 

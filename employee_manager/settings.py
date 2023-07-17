@@ -40,8 +40,10 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'django_filters',
+    'phonenumber_field',
 
     'OKR.apps.OkrConfig',
+    'Employee.apps.EmployeeConfig',
 ]
 
 MIDDLEWARE = [
@@ -141,7 +143,10 @@ REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+        'rest_framework.permissions.IsAuthenticated'
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'authentication.backends.JWTAuthentication',
     ],
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
