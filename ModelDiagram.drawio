@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="h8m3sAev7H-m7dmJf8yI" name="Page-1">
-        <mxGraphModel dx="4528" dy="832" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="4681" math="0" shadow="0">
+        <mxGraphModel dx="4692" dy="911" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="4681" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -1349,7 +1349,85 @@
                     <mxGeometry x="602.74" y="4010" width="130" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="1404" value="&lt;font style=&quot;font-size: 28px;&quot;&gt;Các chức năng đang cần triển khai&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#001DBC;fillColor=#0050ef;fontColor=#ffffff;" vertex="1" parent="1">
-                    <mxGeometry x="935.8700000000001" y="3565" width="460" height="50" as="geometry"/>
+                    <mxGeometry x="1238.13" y="3480" width="460" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="1405" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="1428" target="1408">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="2500" y="3710" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="1406" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="1407" target="1414">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="1407" value="Leader" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1668.13" y="3560" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1408" value="CRUD okr" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+                    <mxGeometry x="2438.13" y="3690" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1409" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="1421" target="1415">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1354.39" y="4030" as="targetPoint"/>
+                        <mxPoint x="1457.6600000000005" y="3940" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="1410" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="1415" target="1417">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1301.4900000000005" y="4150" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="1411" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="1421" target="1419">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1504.39" y="4010" as="targetPoint"/>
+                        <mxPoint x="1457.6600000000005" y="3940" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="1412" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="1414" target="1421">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1468.13" y="3890" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="1413" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="1414" target="1424">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="1414" value="View List employee&amp;nbsp;" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+                    <mxGeometry x="1653.13" y="3700" width="150" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1415" value="View Employee's list OKR/KPI" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+                    <mxGeometry x="1379.6100000000001" y="4010" width="139.21" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1416" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="1417" target="1418">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="1417" value="View detail OKR/KPI" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+                    <mxGeometry x="1339.2100000000003" y="4120" width="135.61" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1418" value="Approve/confirm" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+                    <mxGeometry x="1300.0000000000002" y="4260" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1419" value="filter (by name,okr/kpi status)" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+                    <mxGeometry x="1573.92" y="4010" width="156.08" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1421" value="own Team" style="whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+                    <mxGeometry x="1528.13" y="3840" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1422" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="1424" target="1425">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="1423" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.551;entryY=0.033;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="1424" target="1426">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="1424" value="scc" style="whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+                    <mxGeometry x="1858.0000000000005" y="3840" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1425" value="View Employee related infor" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+                    <mxGeometry x="1847.3400000000001" y="3970" width="150" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1426" value="filter (by department, work place,Name)" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+                    <mxGeometry x="2030.0499999999997" y="3970" width="177.95" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="1428" value="employee" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="2438.13" y="3560" width="120" height="60" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
