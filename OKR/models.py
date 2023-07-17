@@ -64,8 +64,8 @@ class OKR(models.Model):
         OK = 'S', _('Satisfactory')
         NOK = 'NS', _('Not Satisfactory')
     
-    estimated = models.CharField(max_length=200)
-    actual = models.CharField(max_length=200)
+    estimated = models.CharField(max_length=200, null=True)
+    actual = models.CharField(max_length=200, null=True)
 
     status = models.CharField(choices=Status.choices, 
                               default=Status.P)

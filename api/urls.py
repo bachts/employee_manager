@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path, include, re_path
 from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
 from . import views
@@ -14,6 +14,7 @@ router.register(r'okr', views.OkrViewSet, basename='okr')
 router.register(r'employee', views.EmployeeViewSet, basename='employee')
 router.register(r'team', views.TeamViewSet, basename='team')
 router.register(r'department', views.DepartmentViewSet, basename='department')
+#User
 
 
 
@@ -23,4 +24,6 @@ urlpatterns = [
     path('', include(router.urls)),
     # path('', views.home.as_view),
     # path('update', views.create_okr)
+    re_path(r'^registration/?$', views.RegistrationAPIView.as_view(), name='user_registration'),
+    re_path(r'^login/?$', views.LoginAPIView.as_view(), name='user_login'),
 ]

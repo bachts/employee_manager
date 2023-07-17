@@ -33,4 +33,10 @@ def get_quarter(sender, instance: OKR, created=False, **kwargs):
     instance.deadline_year = year
     instance.deadline_month = month
 
+@receiver(pre_save, sender=OKR)
+def set_regularity(sender, instance: OKR, **kwargs):
+    if instance.type == 'OKR':
+        instance.regularity = 'QUAR'
+    else:
+        instance.regularity = 'MO'
 

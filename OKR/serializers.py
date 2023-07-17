@@ -28,7 +28,7 @@ class OKRFullCreate(serializers.ModelSerializer):
     objective = ObjectiveSerializer()
     class Meta:
         model = models.OKR
-        exclude = ['ratio', 'status', 'files', 'result']
+        exclude = ['ratio', 'status', 'files', 'result', 'regularity', 'created_by', 'updated_by']
         # fields = '__all__'
 
     def create(self, validated_data):
@@ -41,7 +41,7 @@ class OKRCreate(serializers.ModelSerializer):
 
     class Meta:
         model = models.OKR
-        exclude = ['ratio', 'status', 'files', 'result']
+        exclude = ['ratio', 'status', 'files', 'result', 'regularity', 'created_by','updated_by']
         
 class OKRRetrieve(serializers.ModelSerializer):
     class Meta:
@@ -50,7 +50,7 @@ class OKRRetrieve(serializers.ModelSerializer):
 class OKRUpdate(serializers.ModelSerializer):
     class Meta:
         model = models.OKR
-        exclude = ['objective', 'source', 'regularity', 'ratio', 'created_by']
+        exclude = ['objective', 'source', 'regularity', 'ratio', 'created_by', 'updated_by']
 
 
 
