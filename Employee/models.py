@@ -5,7 +5,7 @@ from django.db import models
 from django.core import validators
 
 from django.utils.translation import gettext_lazy as _
-
+from users.models import MyUser
 # Create your models here.
 
 class Department(models.Model):
@@ -33,6 +33,7 @@ class Team(models.Model):
 class Employee(models.Model):
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True)
+    user = models.OneToOneField(MyUser, related_name='profile', on_delete=models.SET_NULL, null=True)
     employee_id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
 
@@ -42,6 +43,6 @@ class Employee(models.Model):
     position = models.CharField(choices=Position.choices)
 
     is_manager = models.BooleanField(default=False)
-    manages = models.ManyToManyField('self', symmetrical=False)
+    manages = models.ManyToManyField('self', symmetrical=False, null=True, blank=True)
     def __str__(self):
         return self.name

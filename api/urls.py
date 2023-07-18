@@ -24,4 +24,6 @@ urlpatterns = [
     path('', include(router.urls)),
     # path('', views.home.as_view),
     # path('update', views.create_okr)
+    re_path(r'^registration/?$', views.RegistrationAPIView.as_view(), name='user_registration'),
+    re_path(r'^login/?$', views.LoginAPIView.as_view(), name='user_login'),
 ]

@@ -15,6 +15,7 @@ from django_filters import rest_framework as filters
 
 from OKR import serializers as okr_serializers
 from Employee import serializers as employee_serializers
+from users import serializers as user_serializers
 # Create your views here.
 
 # OKR Viewset
@@ -66,10 +67,6 @@ class ObjectiveViewSet(viewsets.ModelViewSet):
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = employee_serializers.EmployeeSerializer
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()
     def get_serializer_class(self):
@@ -94,3 +91,31 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+
+
+
+class RegistrationAPIView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = user_serializers.RegistrationSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(validated_data=request.data)
+
+        return Response(
+            {
+                'token': serializer.data.get('token', None)
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+class LoginAPIView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = user_serializers.LoginSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
