@@ -4,7 +4,6 @@ from django.db import transaction
 
 from OKR.models import OKR, Log, Source, Formula, Objective
 from Employee.models import Employee, Team, Department
-from User.models import User
 
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
@@ -16,7 +15,6 @@ from django_filters import rest_framework as filters
 
 from OKR import serializers as okr_serializers
 from Employee import serializers as employee_serializers
-from User import serializers as user_serializers
 # Create your views here.
 
 # OKR Viewset
@@ -68,6 +66,10 @@ class ObjectiveViewSet(viewsets.ModelViewSet):
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = employee_serializers.EmployeeSerializer
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()
     def get_serializer_class(self):
@@ -76,6 +78,10 @@ class TeamViewSet(viewsets.ModelViewSet):
         if self.action == 'update' or self.action == 'partial_update':
             return employee_serializers.TeamUpdate
         return employee_serializers.TeamCreate
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 class DepartmentViewSet(viewsets.ModelViewSet):
     queryset = Department.objects.all()
     def get_serializer_class(self):
@@ -84,36 +90,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         if self.action == 'update' or self.action == 'partial_update':
             return employee_serializers.DepartmentUpdate
         return employee_serializers.DepartmentCreate
-
-# # User viewsets
-# class UserViewSet(viewsets.ModelViewSet):
-#     queryset = User.objects.all()
-#     def get_serializer_class(self):
-#         if self.action == 'list' or self.action == 'retrieve':
-#             pass
-
-
-# Authentication API
-class RegistrationAPIView(APIView):
-    permission_classes = [AllowAny]
-    serializer_class = user_serializers.RegistrationSerializer
-
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(
-            {
-                'token': serializer.data.get('token', None),
-            },
-            status=status.HTTP_201_CREATED,
-        )
-class LoginAPIView(APIView):
-    permission_classes = [AllowAny]
-    serializer_class = user_serializers.LoginSerializer
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)

@@ -3,12 +3,9 @@ from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxValueValidator, MinValueValidator
 from datetime import datetime, timedelta
-from User.models import User
 # Create your models here.
 class OKR(models.Model):
     id = models.BigAutoField(primary_key=True)
-
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
     note = models.TextField(max_length=200, null=True, blank=True)
 

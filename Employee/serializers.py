@@ -17,18 +17,18 @@ class DepartmentSerializer(serializers.ModelSerializer):
 class TeamCreate(serializers.ModelSerializer):
     class Meta:
         model = models.Team
-        exclude = ['updated_by']
+        exclude = ['updated_by', 'created_by']
 class TeamUpdate(serializers.ModelSerializer):
     class Meta:
         model = models.Team
-        exclude = ['created_by']
+        exclude = ['created_by', 'updated_by']
 
 
 class DepartmentCreate(serializers.ModelSerializer):
     class Meta:
         model = models.Department
-        exclude = ['updated_by']
+        exclude = ['updated_by', 'created_by']
 class DepartmentUpdate(serializers.ModelSerializer):
     class Meta:
         model = models.Department
-        exclude = ['created_by']
+        exclude = ['created_by', 'updated_by']

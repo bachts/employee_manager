@@ -41,14 +41,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'rest_framework.authtoken',
-    'User',
 
     'OKR.apps.OkrConfig',
     'Employee.apps.EmployeeConfig',
-    # 'Users.apps.UserConfig',
 ]
-
-AUTH_USER_MODEL = 'User.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -151,7 +147,6 @@ REST_FRAMEWORK = {
         # 'rest_framework.permissions.IsAuthenticated'
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'User.backends.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ],
