@@ -5,7 +5,7 @@ from datetime import datetime
 from datetime import timedelta
 
 from django.utils.translation import gettext_lazy as _
-from phonenumber_field.modelfields import PhoneNumberField
+# from phonenumber_field.modelfields import PhoneNumberField
 # Create your models here.
 
 from django.conf import settings
@@ -16,25 +16,41 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from Employee.models import Employee
 
 class UserManager(BaseUserManager):
-    def _create_user(self, email, password=None, **extra_fields):
-        if not username: 
+    def _create_user(self, username, email, password=None, **extra_fields):
+        if not username:
             raise ValueError('The username must be provided')
         if not email:
             raise ValueError('The email must be provided')
         
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        user = self.model(username=username, email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
 
         return user
+    
+    def create_user(self, username, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_superuser', False)
+
+        return self._create_user(username=username, email=email, password=password, **extra_fields)
+    
+    def create_superuser(self, username, email, password=None, **extra_fields):
+        print(username, email)
+        extra_fields.setdefault('is_superuser', True)
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+        
+        return self._create_user(username=username, email=email, password=password, **extra_fields)
 
 class User(PermissionsMixin, AbstractBaseUser):
     
+    USERNAME_FIELD = 'email_address'
+    REQUIRED_FIELDS = ('username', )
+
+
+    username = models.CharField(db_index=True, max_length=255, unique=True)
+
     full_name = models.CharField(max_length=50)
-    employee = models.OneToOneField(Employee,
-                                    on_delete=models.SET_NULL,
-                                    primary_key=True)
     class Gender(models.TextChoices):
         m = 'M', _('Male')
         f = 'F', _('Female')
@@ -42,12 +58,12 @@ class User(PermissionsMixin, AbstractBaseUser):
     gender = models.CharField(choices=Gender.choices)
 
     birth_date = models.DateField()
-    phone_number = PhoneNumberField(region='VN')
-    
+    phone_number = models.CharField(max_length=20)
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, null=True)
+
     email_address = models.EmailField(validators=[validators.validate_email],
                                       unique=True,
                                       blank=False)
-    USERNAME_FIELD = 'email_address'
     objects = UserManager()
     def __str__(self):
         return self.email_address
@@ -84,9 +100,12 @@ class User(PermissionsMixin, AbstractBaseUser):
         l2 = 'L2', _('L2')
         l3 = 'L3', _('L3')
     level = models.CharField(choices=Level.choices)
-    created_by = models.CharField(max_length=50)
-    updated_by = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.CharField(max_length=50, null=True)
+    updated_by = models.CharField(max_length=50, null=True)
+    created_at = models.DateTimeField(auto_now=True, null=True)
+    updated_at = models.DateTimeField(auto_now_add=True, null=True)
 
+    #employee - leader - manager
+
+    is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
