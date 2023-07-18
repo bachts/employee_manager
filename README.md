@@ -1,0 +1,6 @@
+# employee_manager
+
+# TODO: 
++ USER LOGIN
++ USER AUTHENTICATION
++ EXCEL EXPORT
