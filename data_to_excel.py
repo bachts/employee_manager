@@ -7,66 +7,82 @@ user_name = 'bach'
 password = 'password'
 
 
-engine = create_engine('postgresql+psycopg2://postgres:postgres@localhost:5432/bach')
+engine = create_engine('postgresql+psycopg2://postgres:postgres@localhost:5432/okr')
 
-full_sql = """select * 
+full_sql = """select *
 from
-(select employees.id as id, employees.employee_code as employee_code, okr_kpis.deadline, okr_kpis.regularly as regularity,employees.full_name as full_name,okr_kpis.objective_id as okr_kpi_id, type, objective_name, key_result_name as kr_phong, unit, condition, norm, weight, ratio, result, status, departments.name as department_name
-from okr_kpis, okr_kpis_employee_links, employees, employees_department_links, departments
-where okr_kpis.id = okr_kpis_employee_links.okr_kpi_id
-and okr_kpis_employee_links.employee_id = employees.id
-and employees.id = employees_department_links.employee_id
-and employees_department_links.department_id = departments.id) t1
+(select key_result_department as kr_phong, key_result_team as kr_team, key_result_personal as kr_personal, 
+type, "OKR_okr".id as okr_kpi_id, unit, deadline, norm, weight, ratio, condition, result, status, objective_name, files,
+user_id, regularity
+from "OKR_okr", "OKR_objective"
+where "OKR_okr".id = "OKR_objective".id) t1
+
+left join 
+(select id, full_name, level
+ from "users_myuser") t2
+on t1.user_id = t2.id
 
 left join
-
-(select employees.id as t2_id, key_result_name as kr_team, teams.name as team_name
-from okr_kpis, okr_kpis_employee_links, employees, employees_team_links, teams
-where okr_kpis.id = okr_kpis_employee_links.okr_kpi_id
-and okr_kpis_employee_links.employee_id = employees.id
-and employees.id = employees_team_links.employee_id
-and employees_team_links.team_id = teams.id) t2
-
-on t1.id = t2.t2_id
+(select employee_id, name as employee_code, position, team_id, department_id
+from "Employee_employee") t3
+on t2.id = t3.employee_id
 
 left join
-(select employees.id as t3_id, role_employees.name as role_name
-from employees, employees_role_employee_links, role_employees
-where employees.id = employees_role_employee_links.employee_id
- and employees_role_employee_links.role_employee_id = role_employees.id) t3
-on t1.id = t3.t3_id
+(select team_id, name as team_name
+from "Employee_team") t4
+on t3.team_id = t4.team_id
 
 left join
-
-(select okr_kpis.id as t4_id, proofs.name as proof_name, proofs.description proof_description, proofs.url
-from okr_kpis, proofs_okr_kpi_links, proofs
-where okr_kpis.id = proofs_okr_kpi_links.okr_kpi_id
-and proofs_okr_kpi_links.proof_id = proofs.id) t4
-on t1.okr_kpi_id = t4.t4_id
-order by t1.okr_kpi_id"""
+(select department_id, name as department_name
+from "Employee_department") t5
+on t3.department_id = t5.department_id
+"""
 
 full_df = pd.read_sql(full_sql, engine)
 
+
+columns = ['kr_phong', 'kr_team', 'kr_personal', 'type', 'okr_kpi_id', 'unit',
+       'deadline', 'norm', 'weight', 'ratio', 'condition', 'result', 'status',
+       'objective_name', 'files', 'user_id', 'id', 'full_name', 'level',
+       'employee_id', 'employee_code', 'position', 'team_id', 'department_id',
+       'team_id', 'team_name', 'department_id', 'department_name']
 def nhanvien() -> None:
+    # NO_LEVEL = -1, 'No Level'
+    #     SVCNTS = 0, 'SVCNTS'
+    #     L1 = 1, 'L1'
+    #     L2 = 2, 'L2'
+    #     L3 = 3, 'L3' 
 
-    nhanvien_df = full_df.drop(columns=['t2_id', 't3_id', 't4_id'], axis=1)
-    column_order= ['okr_kpi_id', 'employee_code', 'full_name', 'department_name', 'team_name', 'role_name', 'type', 'objective_name', 'kr_phong', 'kr_team', 'unit', 'condition', 
-                  'norm', 'weight', 'ratio', 'result', 'status', 'proof_name', 'proof_description', 'url']
-    nhanvien_df = nhanvien_df[column_order]
-    nhanvien_df.sort_values('employee_code', inplace=True)
+    column_order = ['okr_kpi_id', 'employee_id', 'full_name', 'department_name', 'team_name',
+                    'position', 'type', 'objective_name', 'kr_phong', 'kr_team', 'kr_personal', 
+                    'unit', 'condition', 'norm', 'weight', 'ratio', 'result', 'status', 'files', 'level']
+                    
+
+    nhanvien_df = full_df[column_order]
+    print(nhanvien_df.dtypes)
+    nhanvien_df.sort_values('employee_id', inplace=True)
     nhanvien_df.fillna('No data', inplace=True)
-    # index = pd.MultiIndex.from_tuples(tuples=['employee_code', 'okr_kpi_id'])
-    # print(nhanvien_df.groupby(['employee_code', 'okr_kpi_id', 'type']))
-    nhanvien_df.set_index(['employee_code', 'full_name', 'department_name', 'team_name', 'type', 'okr_kpi_id', 'objective_name', 'type'], inplace=True)
-    nhanvien_df.to_excel('nhanvien.xlsx')
-
+    nhanvien_df.set_index(['employee_id', 'full_name', 'department_name', 'team_name', 'type', 'okr_kpi_id', 'objective_name', 'type'], inplace=True)
+    
+    levels = {
+        -1: 'NoLevel',
+        0: 'SVCNTS',
+        1: 'L1',
+        2: 'L2',
+        3: 'L3'
+    }
+    for value, str in levels.items():
+        temp_df = nhanvien_df.loc[nhanvien_df['level']==value]
+        temp_df.drop(columns=['level'], axis=1)
+        temp_df.to_excel(f'nhanvien{str}.xlsx')
 
 def department() -> None:
-    department_df = full_df.drop(columns=['t2_id', 't3_id', 't4_id', 'url', 'employee_code', 'proof_name', 'proof_description', 'team_name', 'role_name'], axis=1)
+    column_order = ['okr_kpi_id', 'full_name', 'department_name', 'type',
+                    'objective_name', 'kr_phong', 'kr_team', 'kr_personal', 'unit',
+                    'condition', 'norm', 'weight', 'ratio',  'result', 'status', 'deadline'] 
 
-    column_order = ['okr_kpi_id', 'full_name', 'department_name', 'type', 'objective_name', 'kr_phong', 'kr_team', 'unit', 'condition', 
-                  'norm', 'weight', 'ratio', 'result', 'status', 'deadline']
-    department_df = department_df[column_order]
+    department_df = full_df[column_order]
+    department_df['deadline'] = department_df['deadline'].dt.tz_localize(None)
 
     def do_nothing(x):
         return x
@@ -92,11 +108,14 @@ def department() -> None:
     department_df.to_excel('department.xlsx')
 
 def okr_quarter() -> None:
-    quarter_df = full_df.drop(columns=['t2_id', 't3_id', 't4_id'], axis=1)
-    quarter_df = quarter_df.loc[quarter_df['type'] == 'okr']
-    quarter_df['deadline'] = quarter_df['deadline'].astype('string')
-    column_order= ['okr_kpi_id', 'employee_code', 'full_name', 'department_name', 'team_name', 'objective_name', 'kr_phong', 'regularity', 'unit', 'condition', 
-                   'result', 'deadline', 'status', 'proof_name', 'proof_description',]
+
+    
+
+    quarter_df = full_df.loc[full_df['type'] == 'okr']
+    quarter_df['deadline'] = quarter_df['deadline'].dt.tz_localize(None)
+    column_order = ['okr_kpi_id', 'employee_code', 'full_name', 'department_name', 'team_name',
+                    'objective_name', 'kr_phong', 'regularity', 'unit', 'condition',
+                    'result', 'deadline', 'status', 'files']
     quarter_df = quarter_df[column_order]
     quarter_df = quarter_df.fillna('No data')
     quarter_df = quarter_df.set_index(['department_name', 'team_name', 'employee_code', 'full_name', 'okr_kpi_id', 'objective_name'])

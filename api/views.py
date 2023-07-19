@@ -10,8 +10,10 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework import status, permissions, mixins, viewsets
+from rest_framework.authtoken.models import Token
 
 from django_filters import rest_framework as filters
+from django.contrib.auth.models import update_last_login
 
 from OKR import serializers as okr_serializers
 from Employee import serializers as employee_serializers
@@ -113,9 +115,11 @@ class RegistrationAPIView(APIView):
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
     serializer_class = user_serializers.LoginSerializer
-
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        user = serializer.validated_data['user']
+        update_last_login(None, user)
+        # token, created = Token.objects.get_or_create(user=user)
+        return Response({'data': serializer.data, 'status': status.HTTP_200_OK})# 'Token': token.key})

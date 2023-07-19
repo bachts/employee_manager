@@ -4,7 +4,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import (BaseUserManager, AbstractBaseUser)
-
+from django.core import validators
 from django.utils import timezone
 
 # Create your models here.
@@ -40,6 +40,7 @@ class MyUserManager(BaseUserManager):
             date_in = date_in,
         )
         user.set_password(password)
+        user.save(password=password)
         user.save(using=self._db)
         return user
     def create_superuser(self, email, full_name, gender, birthday, phone_number, job_code, job_title,
@@ -69,6 +70,7 @@ class MyUserManager(BaseUserManager):
 
 class MyUser(AbstractBaseUser):
     email = models.EmailField(
+        validators=[validators.validate_email],
         max_length=255,
         unique=True
     )
@@ -138,15 +140,3 @@ class MyUser(AbstractBaseUser):
         return self.is_admin
     def get_full_name(self):
         return self.full_name
-    def token(self):
-        return self._generate_jwt_token()
-    def _generate_jwt_token(self):
-        dt = datetime.datetime.now() + datetime.timedelta(days=60)
-
-        token = jwt.encode({
-            'id': self.pk,
-            'exp': int(dt.strftime('%s'))
-        }, settings.SECRET_KEY, algorithm='HS256')
-        return jwt.decode(jwt=token,
-                          key=settings.SECRET_KEY,
-                          algorithms='HS256')
