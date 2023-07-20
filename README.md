@@ -1,4 +1,4 @@
 # employee_manager
 
 # TODO: 
-+ USER LOGIN
++ ROLE AND PERMISSION
