@@ -18,24 +18,19 @@ from "OKR_okr", "OKR_objective"
 where "OKR_okr".id = "OKR_objective".id) t1
 
 left join 
-(select id, full_name, level
- from "users_myuser") t2
+(select id, full_name, level, position, team_id, department_id
+from "Employee_employee") t2
 on t1.user_id = t2.id
 
 left join
-(select employee_id, name as employee_code, position, team_id, department_id
-from "Employee_employee") t3
-on t2.id = t3.employee_id
-
-left join
 (select team_id, name as team_name
-from "Employee_team") t4
-on t3.team_id = t4.team_id
+from "Employee_team") t3
+on t2.team_id = t3.team_id
 
 left join
 (select department_id, name as department_name
-from "Employee_department") t5
-on t3.department_id = t5.department_id
+from "Employee_department") t4
+on t2.department_id = t4.department_id
 """
 
 full_df = pd.read_sql(full_sql, engine)
@@ -44,7 +39,7 @@ full_df = pd.read_sql(full_sql, engine)
 columns = ['kr_phong', 'kr_team', 'kr_personal', 'type', 'okr_kpi_id', 'unit',
        'deadline', 'norm', 'weight', 'ratio', 'condition', 'result', 'status',
        'objective_name', 'files', 'user_id', 'id', 'full_name', 'level',
-       'employee_id', 'employee_code', 'position', 'team_id', 'department_id',
+       'id', 'employee_code', 'position', 'team_id', 'department_id',
        'team_id', 'team_name', 'department_id', 'department_name']
 def nhanvien() -> None:
     # NO_LEVEL = -1, 'No Level'
@@ -53,16 +48,16 @@ def nhanvien() -> None:
     #     L2 = 2, 'L2'
     #     L3 = 3, 'L3' 
 
-    column_order = ['okr_kpi_id', 'employee_id', 'full_name', 'department_name', 'team_name',
+    column_order = ['okr_kpi_id', 'id', 'full_name', 'department_name', 'team_name',
                     'position', 'type', 'objective_name', 'kr_phong', 'kr_team', 'kr_personal', 
                     'unit', 'condition', 'norm', 'weight', 'ratio', 'result', 'status', 'files', 'level']
                     
 
     nhanvien_df = full_df[column_order]
     print(nhanvien_df.dtypes)
-    nhanvien_df.sort_values('employee_id', inplace=True)
+    nhanvien_df.sort_values('id', inplace=True)
     nhanvien_df.fillna('No data', inplace=True)
-    nhanvien_df.set_index(['employee_id', 'full_name', 'department_name', 'team_name', 'type', 'okr_kpi_id', 'objective_name', 'type'], inplace=True)
+    nhanvien_df.set_index(['id', 'full_name', 'department_name', 'team_name', 'type', 'okr_kpi_id', 'objective_name', 'type'], inplace=True)
     
     levels = {
         -1: 'NoLevel',
@@ -113,12 +108,12 @@ def okr_quarter() -> None:
 
     quarter_df = full_df.loc[full_df['type'] == 'okr']
     quarter_df['deadline'] = quarter_df['deadline'].dt.tz_localize(None)
-    column_order = ['okr_kpi_id', 'employee_code', 'full_name', 'department_name', 'team_name',
+    column_order = ['okr_kpi_id', 'id', 'full_name', 'department_name', 'team_name',
                     'objective_name', 'kr_phong', 'regularity', 'unit', 'condition',
                     'result', 'deadline', 'status', 'files']
     quarter_df = quarter_df[column_order]
     quarter_df = quarter_df.fillna('No data')
-    quarter_df = quarter_df.set_index(['department_name', 'team_name', 'employee_code', 'full_name', 'okr_kpi_id', 'objective_name'])
+    quarter_df = quarter_df.set_index(['department_name', 'team_name', 'id', 'full_name', 'okr_kpi_id', 'objective_name'])
     quarter_df.to_excel('quarter.xlsx')
 
 

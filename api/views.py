@@ -1,23 +1,27 @@
 from django.shortcuts import render
 from django.http import Http404
 from django.db import transaction
+from django.conf import settings
 
 from OKR.models import OKR, Log, Source, Formula, Objective
 from Employee.models import Employee, Team, Department
 
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import  action
 from rest_framework.response import Response
 from rest_framework import status, permissions, mixins, viewsets
 from rest_framework.authtoken.models import Token
 
 from django_filters import rest_framework as filters
-from django.contrib.auth.models import update_last_login
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.hashers import make_password
+
 
 from OKR import serializers as okr_serializers
 from Employee import serializers as employee_serializers
-from users import serializers as user_serializers
+
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 # Create your views here.
 
 # OKR Viewset
@@ -25,6 +29,7 @@ class LogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Log.objects.all()
     serializer_class = okr_serializers.LogSerializer
 class OkrViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = OKR.objects.all()
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_fields = ('created_by', 'status', 'deadline_month', 'deadline_quarter', 'deadline_year')
@@ -50,12 +55,15 @@ class OkrViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 class SourceViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Source.objects.all()
     serializer_class = okr_serializers.SourceSerializer
 class FormulaViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Formula.objects.all()
     serializer_class = okr_serializers.FormulaSerializer
 class ObjectiveViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Objective.objects.all()
     serializer_class = okr_serializers.ObjectiveSerializer
     # def get_serializer_class(self):
@@ -69,6 +77,8 @@ class ObjectiveViewSet(viewsets.ModelViewSet):
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = employee_serializers.EmployeeSerializer
+    
+    
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()
     def get_serializer_class(self):
@@ -94,32 +104,44 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
-
-
-class RegistrationAPIView(APIView):
+class RegistrationView(APIView):
     permission_classes = [AllowAny]
-    serializer_class = user_serializers.RegistrationSerializer
+    serializer_class = employee_serializers.RegistrationSerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
+
+        user = serializer.save()
+
+        return Response({'message': 'registration ok',
+                         'status': status.HTTP_201_CREATED})
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = employee_serializers.LoginSerializer
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(validated_data=request.data)
 
-        return Response(
-            {
-                'token': serializer.data.get('token', None)
-            },
-            status=status.HTTP_201_CREATED
-        )
-
-class LoginAPIView(APIView):
-    permission_classes = [AllowAny]
-    serializer_class = user_serializers.LoginSerializer
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-
-        user = serializer.validated_data['user']
-        update_last_login(None, user)
-        # token, created = Token.objects.get_or_create(user=user)
-        return Response({'data': serializer.data, 'status': status.HTTP_200_OK})# 'Token': token.key})
+        user = authenticate(request, 
+                            username=serializer.validated_data['username'],
+                            password=serializer.validated_data['password'])
+        print(user)
+        if user:
+            refresh = TokenObtainPairSerializer.get_token(user)
+            data = {
+                'refresh_token': str(refresh),
+                'access_token': str(refresh.access_token),
+                'access_expires': int(settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()),
+                'refresh_expires': int(settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds())
+            }
+            login(request,user=user)
+            return Response(status=status.HTTP_200_OK)
+        
+        return Response({
+            'error_message': serializer.errors,
+            'error_code': 400
+        }, status=status.HTTP_400_BAD_REQUEST)
+    

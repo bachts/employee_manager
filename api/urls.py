@@ -1,6 +1,7 @@
 from django.urls import path, include, re_path
 from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt import views as jwt_views
 from . import views
 
 router = DefaultRouter()
@@ -24,6 +25,8 @@ urlpatterns = [
     path('', include(router.urls)),
     # path('', views.home.as_view),
     # path('update', views.create_okr)
-    re_path(r'^registration/?$', views.RegistrationAPIView.as_view(), name='user_registration'),
-    re_path(r'^login/?$', views.LoginAPIView.as_view(), name='user_login'),
+    re_path(r'^registration/?$', views.RegistrationView.as_view(), name='user_registration'),
+    path('login/', views.LoginView.as_view(), name='user_login'),
+    path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 ]
