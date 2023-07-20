@@ -54,12 +54,13 @@ class OkrViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
-    def get_queryset(self): #RETURN OKR ONLY FOR USER OWNING THEM
+    def get_queryset(self): # HIEN OKR DOI VOI USER CO OKR DO
         user = self.request.user
         if user.is_superuser:
             return OKR.objects.all()
         else:
             return OKR.objects.filter(user__id=user.id) 
+    #TODO: CHO PHEP EDIT OKR VOI NGUOI MANAGE USER DO
         
 class SourceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -97,7 +98,7 @@ class TeamViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
-    def get_queryset(self):
+    def get_queryset(self): # XEM DEPARTMENT MINH O TRONG
         user = self.request.user
         if user.is_superuser:
             return Team.objects.all()
@@ -106,6 +107,7 @@ class TeamViewSet(viewsets.ModelViewSet):
             return Team.objects.filter(department__department_id=teams)
         else:
             return Department.objects.none()
+        
 class DepartmentViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'retrieve':
@@ -117,7 +119,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
-    def get_queryset(self):
+    def get_queryset(self): # XEM DEPARTMENT MINH O TRONG
         user = self.request.user
         if user.is_superuser:
             return Department.objects.all()
@@ -126,11 +128,17 @@ class DepartmentViewSet(viewsets.ModelViewSet):
             return Department.objects.filter(department__department_id=departments)
         else:
             return Department.objects.none()
-        
+    
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = employee_serializers.EmployeeSerializer
 
+    #TODO: XEM EMPLOYEE MA MINH QUAN LY
+    #TODO: LIMIT ACCESS EMPLOYEE DOI VOI MANAGER/SUPERUSER/BAN THAN
+
+
+
+#TODO: TAO LOGOUT ENDPOINT
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
     serializer_class = employee_serializers.RegistrationSerializer
