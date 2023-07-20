@@ -54,6 +54,13 @@ class OkrViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+    def get_queryset(self): #RETURN OKR ONLY FOR USER OWNING THEM
+        user = self.request.user
+        if user.is_superuser:
+            return OKR.objects.all()
+        else:
+            return OKR.objects.filter(user__id=user.id) 
+        
 class SourceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Source.objects.all()
@@ -73,10 +80,9 @@ class ObjectiveViewSet(viewsets.ModelViewSet):
     #     return okr_serializers.ObjectiveSerializer
 
 
+
 # Employee Viewsets
-class EmployeeViewSet(viewsets.ModelViewSet):
-    queryset = Employee.objects.all()
-    serializer_class = employee_serializers.EmployeeSerializer
+
     
     
 class TeamViewSet(viewsets.ModelViewSet):
@@ -91,8 +97,16 @@ class TeamViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Team.objects.all()
+        if user.get_team():
+            teams = Team.objects.get(pk=user.team.id)  
+            return Team.objects.filter(department__department_id=teams)
+        else:
+            return Department.objects.none()
 class DepartmentViewSet(viewsets.ModelViewSet):
-    queryset = Department.objects.all()
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'retrieve':
             return employee_serializers.DepartmentSerializer
@@ -103,6 +117,19 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Department.objects.all()
+        if user.get_department():
+            departments = Department.objects.get(pk=user.department.id)  
+            return Department.objects.filter(department__department_id=departments)
+        else:
+            return Department.objects.none()
+        
+class EmployeeViewSet(viewsets.ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = employee_serializers.EmployeeSerializer
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]

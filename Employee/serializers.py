@@ -1,10 +1,7 @@
 from rest_framework import serializers
 from . import models
 
-class EmployeeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Employee
-        fields = ['username', 'department', 'team', 'id', 'position', 'is_manager', 'manages', 'full_name']
+
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Team
@@ -46,6 +43,16 @@ class RegistrationSerializer(serializers.ModelSerializer):
                    'date_joined', 'user_permissions', 'groups']
         extra_kwargs = {'password': {'write_only': True}}
 
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Employee
+        fields = ['username', 'department', 'team', 'id', 'position', 'is_manager', 'manages', 'full_name']
+
+class EmployeeSerializerExtended(serializers.ModelSerializer):
+    
+    class Meta:
+        model = models.Employee
+        fields = '__all__'
 class LoginSerializer(serializers.Serializer):
     username = serializers.EmailField(write_only=True)
     password = serializers.CharField(write_only=True)

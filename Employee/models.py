@@ -35,6 +35,7 @@ class Employee(AbstractUser):
     first_name = None
     last_name = None
     email = None
+    id = models.BigAutoField(primary_key=True)
 
     username = models.EmailField(
         validators=[validators.validate_email],
@@ -91,7 +92,6 @@ class Employee(AbstractUser):
     #Employee Info
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
-    id = models.BigAutoField(primary_key=True)
 
     class Position(models.TextChoices):
         c1 = 'C1', _('Position 1')
@@ -102,5 +102,15 @@ class Employee(AbstractUser):
     manages = models.ManyToManyField('self', symmetrical=False, null=True, blank=True)
     def __str__(self):
         return self.full_name
+    
+    def get_department(self):
+        if self.department is not None:
+            return self.department.department_id
+        return None
+    
+    def get_team(self):
+        if self.team is not None:
+            return self.team.team_id
+        return None
    
     
