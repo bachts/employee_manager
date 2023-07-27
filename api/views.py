@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import Http404
 from django.db import transaction
 from django.conf import settings
@@ -14,7 +14,7 @@ from rest_framework import status, permissions, mixins, viewsets
 from rest_framework.authtoken.models import Token
 
 from django_filters import rest_framework as filters
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login , logout
 from django.contrib.auth.hashers import make_password
 
 
@@ -139,6 +139,9 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
 
 #TODO: TAO LOGOUT ENDPOINT
+
+        
+
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
     serializer_class = employee_serializers.RegistrationSerializer
@@ -153,17 +156,17 @@ class RegistrationView(APIView):
                          'status': status.HTTP_201_CREATED})
 
 class LoginView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny,]
     serializer_class = employee_serializers.LoginSerializer
-
+    # print("day la izerwtwe:")
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-
+        # print("day la serializer:",serializer)
         user = authenticate(request, 
                             username=serializer.validated_data['username'],
                             password=serializer.validated_data['password'])
-        print(user)
+        
         if user:
             refresh = TokenObtainPairSerializer.get_token(user)
             data = {
@@ -173,10 +176,20 @@ class LoginView(APIView):
                 'refresh_expires': int(settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds())
             }
             login(request,user=user)
-            return Response(status=status.HTTP_200_OK)
+            # print("day la user:",data)
+            return Response(data,status=status.HTTP_200_OK)
         
         return Response({
             'error_message': serializer.errors,
             'error_code': 400
         }, status=status.HTTP_400_BAD_REQUEST)
     
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly,]
+    serializer_class = employee_serializers.LogoutSerializer
+
+    def post(self,request):
+            print("gia tri cua session",request.get_authenticate_header)
+            logout(request)
+            print("day la user:",request)
+            return Response(status=status.HTTP_200_OK)

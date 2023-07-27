@@ -34,14 +34,14 @@ class Employee(AbstractUser):
     #PERSONAL INFO
     first_name = None
     last_name = None
-    email = None
+    # email = None
     id = models.BigAutoField(primary_key=True)
 
     username = models.EmailField(
         validators=[validators.validate_email],
         max_length=255,
         unique=True,
-        editable=False,
+        editable=True,
     )
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
@@ -52,7 +52,8 @@ class Employee(AbstractUser):
         Female = 2, 'Female'
         Other = 3, 'Other'
         Unk = 4, 'Unknown'
-    gender = models.PositiveSmallIntegerField(choices=Gender.choices, default=Gender.Unk, blank=True)
+    gender = models.PositiveSmallIntegerField(choices=Gender.choices, default=Gender.Unk)
+
     birthday = models.DateField(null=True, blank=True)
     phone_number = models.CharField(max_length=12, null=True, blank=True)
     job_code = models.CharField(max_length=20)
@@ -74,13 +75,13 @@ class Employee(AbstractUser):
     level = models.SmallIntegerField(choices=Level.choices, default=Level.NO_LEVEL)
 
     created_by = models.CharField(editable=False, null=True)
-    updated_by = models.CharField(default=None, null=True)
+    updated_by = models.CharField(default=None, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now=True, editable=False)
     updated_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     date_in = models.DateField(default=None, null=True)
-    date_out = models.DateField(default=None, null=True)
+    date_out = models.DateField(default=None, null=True, blank=True)
 
     #ADMIN INFO
     is_active = models.BooleanField(default=True)

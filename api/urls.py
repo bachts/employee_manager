@@ -27,6 +27,7 @@ urlpatterns = [
     # path('update', views.create_okr)
     re_path(r'^registration/?$', views.RegistrationView.as_view(), name='user_registration'),
     path('login/', views.LoginView.as_view(), name='user_login'),
+    path('logout/', views.LogoutView.as_view(), name='user_logout'),
     path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 ]

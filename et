@@ -1,0 +1,211 @@
+[33mcommit 8c4e8b2ecf3cd13ae36b8a3decc4d5dcd5ad88e0[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Mon Jul 24 17:12:57 2023 +0700
+
+    redis cache lib
+
+[33mcommit 9cc524f5b574d94040e4b9e15ef482cc4c048fe3[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Thu Jul 20 17:30:49 2023 +0700
+
+    added todo
+
+[33mcommit 6f6b1e012d55629c105877af00a05e9697946d47[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Thu Jul 20 17:30:24 2023 +0700
+
+    added todo
+
+[33mcommit e001fc32a5fbc27efd869d21bbb880a38172beb6[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Thu Jul 20 17:27:33 2023 +0700
+
+    Mot vai permission
+
+[33mcommit 471d0bbc91fa19df9dcb4c2a5f6198d29320769f[m
+Author: bachts <64970131+bachts@users.noreply.github.com>
+Date:   Thu Jul 20 16:46:15 2023 +0700
+
+    Update README.md
+
+[33mcommit c137ec1e2cf63cbe843bcb9a342da3b3d1c3f81f[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Thu Jul 20 16:45:08 2023 +0700
+
+    BASIC LOGIN DONE
+
+[33mcommit 55ede37de85e2bd15835ce14eab20dba419e3f7c[m
+Author: bachts <64970131+bachts@users.noreply.github.com>
+Date:   Wed Jul 19 17:28:52 2023 +0700
+
+    Update README.md
+
+[33mcommit 41cd480536af559a324a350c1bf7dd88def72b3d[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Wed Jul 19 17:28:24 2023 +0700
+
+    data to excel export
+
+[33mcommit 56c4baac7627e6496a183633f9bce6d4819fdb73[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Tue Jul 18 16:10:45 2023 +0700
+
+    postgres diagram
+
+[33mcommit fc989d34396532383b75363710b8bac3cc3cbbe9[m
+Author: bachts <64970131+bachts@users.noreply.github.com>
+Date:   Tue Jul 18 16:09:31 2023 +0700
+
+    Create README.md
+
+[33mcommit cd925a9635c278f0d871cbbfb155030756fa805e[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Tue Jul 18 16:08:38 2023 +0700
+
+    User registration Done
+
+[33mcommit 2da1b1651b99595775e12d6fe9bcfc0e76543424[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Tue Jul 18 09:38:03 2023 +0700
+
+    remove user model
+
+[33mcommit f9fcb3575379314881fe4c1fd93aee8a690c2fda[m
+Merge: 6280fd4 72b5ace
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Tue Jul 18 08:51:54 2023 +0700
+
+    Merge branch 'master' of https://github.com/bachts/employee_manager
+
+[33mcommit 6280fd483ac8646975ad99f94ed3dde9bd242afd[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Tue Jul 18 08:50:37 2023 +0700
+
+    add
+
+[33mcommit e21b581a116e8a284e0fd3391d62e7cd1f69d7ed[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Mon Jul 17 16:41:03 2023 +0700
+
+    add diagram
+
+[33mcommit 72b5ace08a46e48972843b80b99a444640bb8ed2[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Mon Jul 17 16:11:41 2023 +0700
+
+    update requirements
+
+[33mcommit f5a452a95c3b8f2e9f465cc5ec62941f8d018f4b[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Mon Jul 17 16:06:54 2023 +0700
+
+    TODO: User authentication + Excel export
+
+[33mcommit fe73f79fd415f6534f10524131fbbe24468ffc52[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Mon Jul 17 15:23:10 2023 +0700
+
+    add diagram, delete model diagram
+
+[33mcommit 11022dc797201d4b7a0fd2e4ec3c36a50a812c11[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Mon Jul 17 11:13:24 2023 +0700
+
+    them diagram ...
+
+[33mcommit c27bfe1af36202b90ba8f529b94449a4eca963fe[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Mon Jul 17 10:08:33 2023 +0700
+
+    User model
+
+[33mcommit 516dafb7fb06e02849a3775aa964a814b9cce98c[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Mon Jul 17 09:21:10 2023 +0700
+
+    them diagram
+
+[33mcommit 7b9794df1e6decdc0402d3518cf7ffa59748e08a[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Fri Jul 7 08:57:30 2023 +0700
+
+    sua diagram
+
+[33mcommit 8096d604cea08bf88067d2b826ced7a54202aad5[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Thu Jul 6 16:51:12 2023 +0700
+
+    fix relation
+
+[33mcommit b22a5e61dd98828f8006242bd4a89146b0372c46[m
+Merge: 0597fbf cc7a85f
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Thu Jul 6 13:46:41 2023 +0700
+
+    Merge remote-tracking branch 'origin/master'
+
+[33mcommit cc7a85f9bf86f58dc2adb0e64ee1eddde931a274[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Thu Jul 6 12:25:07 2023 +0700
+
+    fix relation
+
+[33mcommit 0597fbf106ba86dd6d5fb6caf4b1e232b811b4f3[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Thu Jul 6 11:52:34 2023 +0700
+
+    commit message
+
+[33mcommit e3cf500f472e42a817bbe28df219bf7daded53ef[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Thu Jul 6 11:50:48 2023 +0700
+
+    fix relation
+
+[33mcommit 933921436038519e4a46924e32a77db2e8bb43eb[m
+Author: Giangph29 <giang2282000@gmail.com>
+Date:   Thu Jul 6 10:57:35 2023 +0700
+
+    sua logic
+
+[33mcommit d307d1e9262ea048b557c7df1e6286fb2f469f11[m
+Author: GP228 <132031228+Giangphhe228@users.noreply.github.com>
+Date:   Thu Jul 6 08:23:50 2023 +0700
+
+    Add files via upload
+
+[33mcommit 4ce458072da1e4ac8bb8f883ea4d33099a711581[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Wed Jul 5 17:18:46 2023 +0700
+
+    Auto update relationship between OKR and Log. Auto calculation of OKR.ratio.
+
+[33mcommit d93b0eb23f8e963bcb5a68f74e2399ee05110e4a[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Wed Jul 5 13:40:29 2023 +0700
+
+    minor
+
+[33mcommit 69774f5f15699eefe287eb89caf98238a73888fe[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Wed Jul 5 10:56:21 2023 +0700
+
+    updated models
+
+[33mcommit c78c78461bf957d66f5b0c0580a86e1513835275[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Tue Jul 4 09:47:48 2023 +0700
+
+    viewset api
+
+[33mcommit 2e9deb3afbc69657514af888244a09d86897c27d[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Tue Jul 4 08:14:24 2023 +0700
+
+    Model image
+
+[33mcommit 4a587d77a4b6135ac52522b2320b6a0fc7d95d61[m
+Author: bachts <tunfbachvn2003@gmail.com>
+Date:   Mon Jul 3 17:30:08 2023 +0700
+
+    Models for OKR + API setup

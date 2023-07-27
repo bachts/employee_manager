@@ -41,10 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework_simplejwt.token_blacklist',
     'debug_toolbar',
     'rest_framework',
     'django_filters',
-
+    'knox',
     'OKR.apps.OkrConfig',
     'Employee.apps.EmployeeConfig',
 ]
