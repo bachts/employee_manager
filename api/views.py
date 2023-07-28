@@ -9,7 +9,8 @@ from Employee.models import Employee, Team, Department
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.views import APIView
 from rest_framework.decorators import  action
-from rest_framework.response import Response,HttpResponse
+from rest_framework.response import Response
+from django.http import HttpResponse
 from rest_framework import status, permissions, mixins, viewsets
 from rest_framework.authtoken.models import Token
 
@@ -194,20 +195,28 @@ engine = create_engine('postgresql+psycopg2://postgres:postgres@localhost:5432/o
 class ExcelView(APIView):
     permission_classes = [AllowAny,]
     def get(self,request):
+        nhanvien()
         output_excel = 'KPI.xlsx'
-        path = 'nhanvien.xlsx' % id # this should live elsewhere, definitely
-        if os.path.exists(path):
-            with open(path, "r") as excel:
+        #List all excel files in folder
+        excel_folder= '/'
+        excel_files = [os.path.join(root, file) for root, folder, files in os.walk(excel_folder) for file in files if file.endswith(".xlsx")]
+
+        with pd.ExcelWriter(output_excel) as writer:
+            for excel in excel_files: #For each excel
+                sheet_name = pd.ExcelFile(excel).sheet_names[0] #Find the sheet name
+                df = pd.read_excel(excel) #Create a dataframe
+                df.to_excel(writer, sheet_name=sheet_name, index=False) #Write it to a sheet in the output excel
+
+        if os.path.exists(output_excel):
+            with open(output_excel, "r") as excel:
                 data = excel.read()
 
             response = HttpResponse(data,content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             response['Content-Disposition'] = 'attachment; filename=%s_Report.xlsx' % id
-            return response
-
-        return Response(result,status=status.HTTP_200_OK)
+        return response
 
 
-def nhanvien(dataframe) -> None:
+def nhanvien() -> None:
     # NO_LEVEL = -1, 'No Level'
     #     SVCNTS = 0, 'SVCNTS'
     #     L1 = 1, 'L1'
@@ -248,17 +257,38 @@ def nhanvien(dataframe) -> None:
 
             )
     result = cursor.fetchall()
-    df_result= pd.DataFrame(result)
-    column_order = ['employeeId', 'fullName', 'level', 'teamId', 'teamName',
-                    'Loại', 'KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', 
-                    'Nguồn dữ liệu', 'Định kỳ tính', 'Đơn vị tính', 'Điều kiện', 'Norm',
-                    '% Trọng số chỉ tiêu', 'Kết quả', 'Tỷ lệ', 'Tổng thời gian dự kiến/ ước tính công việc (giờ)',
-                        'Tổng thời gian thực hiện công việc thực tế (giờ)', 'Note']
+    dataframe= pd.DataFrame(result)
+    # column_order = ['employeeId', 'fullName', 'level', 'teamId', 'teamName',
+    #                 'Loại', 'KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', 
+    #                 'Nguồn dữ liệu', 'Định kỳ tính', 'Đơn vị tính', 'Điều kiện', 'Norm',
+    #                 '% Trọng số chỉ tiêu', 'Kết quả', 'Tỷ lệ', 'Tổng thời gian dự kiến/ ước tính công việc (giờ)',
+    #                     'Tổng thời gian thực hiện công việc thực tế (giờ)', 'Note']
                     
+    dataframe.rename(columns={"1": "employeeId"}, inplace=True)
+    dataframe.rename(columns={"2": "fullName"}, inplace=True)
+    dataframe.rename(columns={"3": "level"}, inplace=True)
+    dataframe.rename(columns={"4": "teamId"}, inplace=True)
+    dataframe.rename(columns={"5": "teamName"}, inplace=True)
+    dataframe.rename(columns={"6": "Loại"}, inplace=True)
+    dataframe.rename(columns={"7": "KR phòng"}, inplace=True)
+    dataframe.rename(columns={"8": "KR team"}, inplace=True)
+    dataframe.rename(columns={"9": "KR cá nhân"}, inplace=True)
+    dataframe.rename(columns={"10": "Công thức tính"}, inplace=True)
+    dataframe.rename(columns={"11": "Nguồn dữ liệu"}, inplace=True)
+    dataframe.rename(columns={"12": "Định kỳ tính"}, inplace=True)
+    dataframe.rename(columns={"13": "Đơn vị tính"}, inplace=True)
+    dataframe.rename(columns={"14": "Điều kiện"}, inplace=True)
+    dataframe.rename(columns={"15": "Norm"}, inplace=True)
+    dataframe.rename(columns={"16": "% Trọng số chỉ tiêu"}, inplace=True)
+    dataframe.rename(columns={"17": "Kết quả"}, inplace=True)
+    dataframe.rename(columns={"18": "Tỷ lệ"}, inplace=True)
+    dataframe.rename(columns={"19": "Tổng thời gian dự kiến/ ước tính công việc (giờ)"}, inplace=True)
+    dataframe.rename(columns={"20": "Tổng thời gian thực hiện công việc thực tế (giờ)"}, inplace=True)
+    dataframe.rename(columns={"21": "Note"}, inplace=True)
 
-    nhanvien_df = dataframe[column_order]
+    nhanvien_df = dataframe
     # print(nhanvien_df.dtypes)
-    nhanvien_df.sort_values('id', inplace=True)
+    # nhanvien_df.sort_values('employeeId', inplace=True)
     nhanvien_df.fillna('No data', inplace=True)
     # nhanvien_df.set_index(['id', 'full_name', 'department_name', 'team_name', 'type', 'okr_kpi_id', 'objective_name', 'type'], inplace=True)
     
@@ -273,7 +303,7 @@ def nhanvien(dataframe) -> None:
         temp_df = nhanvien_df.loc[nhanvien_df['level']==value]
         temp_df.drop(columns=['level'], axis=1)
         temp_df.to_excel(f'nhanvien{str}.xlsx')
-        
+
 
 def department() -> None:
     column_order = ['okr_kpi_id', 'full_name', 'department_name', 'type',
