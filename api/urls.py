@@ -19,15 +19,14 @@ router.register(r'department', views.DepartmentViewSet, basename='department')
 
 
 
-
 urlpatterns = [
     #path('okr/get', views.get_okr, name='get-okr'),
     path('', include(router.urls)),
     # path('', views.home.as_view),
     # path('update', views.create_okr)
     re_path(r'^registration/?$', views.RegistrationView.as_view(), name='user_registration'),
+    path('excel_data/', views.ExcelView.as_view(), name='excel_data'),
     path('login/', views.LoginView.as_view(), name='user_login'),
-    path('logout/', views.LogoutView.as_view(), name='user_logout'),
     path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 ]

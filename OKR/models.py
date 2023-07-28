@@ -55,7 +55,7 @@ class OKR(models.Model):
 
     ratio = models.IntegerField(validators=[MaxValueValidator(100),
                                             MinValueValidator(0)],
-                                default=0) #weight * result
+                                default=0, null=False) #weight * result
     
     class Status(models.TextChoices):
         P = 'P', _('Pending Approval')
@@ -98,7 +98,7 @@ class OKR(models.Model):
 
 class Objective(models.Model):
     id = models.BigAutoField(primary_key=True)
-    objective_name = models.CharField(max_length=50)
+    objective_name = models.CharField(max_length=50,null=True)
     objective_content = models.TextField(max_length=200, default='To be filled')
 
     def __str__(self) -> str:

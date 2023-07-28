@@ -53,7 +53,7 @@ class Migration(migrations.Migration):
                 ('norm', models.IntegerField()),
                 ('weight', models.IntegerField(validators=[django.core.validators.MaxValueValidator(100), django.core.validators.MinValueValidator(1)])),
                 ('result', models.IntegerField(blank=True, default=None, null=True, validators=[django.core.validators.MaxValueValidator(100), django.core.validators.MinValueValidator(0)])),
-                ('ratio', models.IntegerField(default=0, validators=[django.core.validators.MaxValueValidator(100), django.core.validators.MinValueValidator(0)])),
+                ('ratio', models.IntegerField(default=0, validators=[django.core.validators.MaxValueValidator(100), django.core.validators.MinValueValidator(0)], null=True)),
                 ('estimated', models.CharField(max_length=200, null=True)),
                 ('actual', models.CharField(max_length=200, null=True)),
                 ('status', models.CharField(choices=[('P', 'Pending Approval'), ('INP', 'In Progress'), ('S', 'Satisfactory'), ('NS', 'Not Satisfactory')], default='P')),
