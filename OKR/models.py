@@ -73,7 +73,7 @@ class OKR(models.Model):
     updated_by = models.CharField(max_length=30, default=None, null=True)
 
     created_at = models.DateTimeField(auto_now=True, editable=False)
-    updated_at = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_at = models.DateTimeField(auto_now_add=True, editable=False, null=True)
 
     deadline = models.DateTimeField()
     

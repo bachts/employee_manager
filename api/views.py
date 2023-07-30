@@ -27,6 +27,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import pandas as pd
 import pandas as pd
 import os
+import openpyxl
 
 # Create your views here.
 
@@ -137,7 +138,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
-    serializer_class = employee_serializers.EmployeeSerializer
+    serializer_class = employee_serializers.EmployeeSerializerExtended
 
     #TODO: XEM EMPLOYEE MA MINH QUAN LY
     #TODO: LIMIT ACCESS EMPLOYEE DOI VOI MANAGER/SUPERUSER/BAN THAN
@@ -190,29 +191,40 @@ class LoginView(APIView):
             'error_code': 400
         }, status=status.HTTP_400_BAD_REQUEST)
 
-engine = create_engine('postgresql+psycopg2://postgres:postgres@localhost:5432/okr')
+# engine = create_engine('postgresql+psycopg2://postgres:postgres@localhost:5432/okr')
 
 class ExcelView(APIView):
     permission_classes = [AllowAny,]
     def get(self,request):
+        output_excel = 'F:/RnD/DjangoProject/employee_manager/outputExcel/KPI.xlsx'
+        if os.path.exists(output_excel):
+            os.remove(output_excel)
         nhanvien()
-        output_excel = 'KPI.xlsx'
+        
         #List all excel files in folder
-        excel_folder= '/'
+        excel_folder= 'F:/RnD/DjangoProject/employee_manager/'
         excel_files = [os.path.join(root, file) for root, folder, files in os.walk(excel_folder) for file in files if file.endswith(".xlsx")]
-
+        # print("gia tri excel:",excel_files)
+        levels = {
+                1: 'L1',
+                2: 'L2',
+                3: 'L3',
+                -1: 'NoLevel',
+                0: 'SVCNTS'
+                }
         with pd.ExcelWriter(output_excel) as writer:
-            for excel in excel_files: #For each excel
-                sheet_name = pd.ExcelFile(excel).sheet_names[0] #Find the sheet name
-                df = pd.read_excel(excel) #Create a dataframe
+            for excel,(value,str) in zip(excel_files,levels.items()): #For each excel
+                # sheet_name = pd.ExcelFile(excel).sheet_names[i] #Find the sheet name
+                sheet_name=f'nhanvien{str}'
+                # print("tên file excel:",sheet_name)
+                df = pd.read_excel(excel, engine="openpyxl") #Create a dataframe
                 df.to_excel(writer, sheet_name=sheet_name, index=False) #Write it to a sheet in the output excel
 
+        wb_obj = openpyxl.load_workbook(output_excel)
         if os.path.exists(output_excel):
-            with open(output_excel, "r") as excel:
-                data = excel.read()
-
-            response = HttpResponse(data,content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            response['Content-Disposition'] = 'attachment; filename=%s_Report.xlsx' % id
+            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = 'attachment; filename=kpi.xlsx'
+        wb_obj.save(response)
         return response
 
 
@@ -263,28 +275,34 @@ def nhanvien() -> None:
     #                 'Nguồn dữ liệu', 'Định kỳ tính', 'Đơn vị tính', 'Điều kiện', 'Norm',
     #                 '% Trọng số chỉ tiêu', 'Kết quả', 'Tỷ lệ', 'Tổng thời gian dự kiến/ ước tính công việc (giờ)',
     #                     'Tổng thời gian thực hiện công việc thực tế (giờ)', 'Note']
-                    
-    dataframe.rename(columns={"1": "employeeId"}, inplace=True)
-    dataframe.rename(columns={"2": "fullName"}, inplace=True)
-    dataframe.rename(columns={"3": "level"}, inplace=True)
-    dataframe.rename(columns={"4": "teamId"}, inplace=True)
-    dataframe.rename(columns={"5": "teamName"}, inplace=True)
-    dataframe.rename(columns={"6": "Loại"}, inplace=True)
-    dataframe.rename(columns={"7": "KR phòng"}, inplace=True)
-    dataframe.rename(columns={"8": "KR team"}, inplace=True)
-    dataframe.rename(columns={"9": "KR cá nhân"}, inplace=True)
-    dataframe.rename(columns={"10": "Công thức tính"}, inplace=True)
-    dataframe.rename(columns={"11": "Nguồn dữ liệu"}, inplace=True)
-    dataframe.rename(columns={"12": "Định kỳ tính"}, inplace=True)
-    dataframe.rename(columns={"13": "Đơn vị tính"}, inplace=True)
-    dataframe.rename(columns={"14": "Điều kiện"}, inplace=True)
-    dataframe.rename(columns={"15": "Norm"}, inplace=True)
-    dataframe.rename(columns={"16": "% Trọng số chỉ tiêu"}, inplace=True)
-    dataframe.rename(columns={"17": "Kết quả"}, inplace=True)
-    dataframe.rename(columns={"18": "Tỷ lệ"}, inplace=True)
-    dataframe.rename(columns={"19": "Tổng thời gian dự kiến/ ước tính công việc (giờ)"}, inplace=True)
-    dataframe.rename(columns={"20": "Tổng thời gian thực hiện công việc thực tế (giờ)"}, inplace=True)
-    dataframe.rename(columns={"21": "Note"}, inplace=True)
+    dataframe.columns= ['employeeId', 'fullName', 'level', 'teamId', 'teamName',
+                    'Loại', 'KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', 
+                    'Nguồn dữ liệu', 'Định kỳ tính', 'Đơn vị tính', 'Điều kiện', 'Norm',
+                    '% Trọng số chỉ tiêu', 'Kết quả', 'Tỷ lệ', 'Tổng thời gian dự kiến/ ước tính công việc (giờ)',
+                        'Tổng thời gian thực hiện công việc thực tế (giờ)', 'Note']               
+    # dataframe.rename(columns={"0": "employeeId"}, inplace=True)
+    # dataframe.rename(columns={"1": "fullName"}, inplace=True)
+    # dataframe.rename(columns={"2": "level"}, inplace=True)
+    # dataframe.rename(columns={"3": "teamId"}, inplace=True)
+    # dataframe.rename(columns={"4": "teamName"}, inplace=True)
+    # dataframe.rename(columns={"5": "Loại"}, inplace=True)
+    # dataframe.rename(columns={"6": "KR phòng"}, inplace=True)
+    # dataframe.rename(columns={"7": "KR team"}, inplace=True)
+    # dataframe.rename(columns={"8": "KR cá nhân"}, inplace=True)
+    # dataframe.rename(columns={"9": "Công thức tính"}, inplace=True)
+    # dataframe.rename(columns={"10": "Nguồn dữ liệu"}, inplace=True)
+    # dataframe.rename(columns={"11": "Định kỳ tính"}, inplace=True)
+    # dataframe.rename(columns={"12": "Đơn vị tính"}, inplace=True)
+    # dataframe.rename(columns={"13": "Điều kiện"}, inplace=True)
+    # dataframe.rename(columns={"14": "Norm"}, inplace=True)
+    # dataframe.rename(columns={"15": "% Trọng số chỉ tiêu"}, inplace=True)
+    # dataframe.rename(columns={"16": "Kết quả"}, inplace=True)
+    # dataframe.rename(columns={"17": "Tỷ lệ"}, inplace=True)
+    # dataframe.rename(columns={"18": "Tổng thời gian dự kiến/ ước tính công việc (giờ)"}, inplace=True)
+    # dataframe.rename(columns={"19": "Tổng thời gian thực hiện công việc thực tế (giờ)"}, inplace=True)
+    # dataframe.rename(columns={"20": "Note"}, inplace=True)
+
+    # print("gia tri cua dataframe:",dataframe)
 
     nhanvien_df = dataframe
     # print(nhanvien_df.dtypes)
@@ -293,15 +311,17 @@ def nhanvien() -> None:
     # nhanvien_df.set_index(['id', 'full_name', 'department_name', 'team_name', 'type', 'okr_kpi_id', 'objective_name', 'type'], inplace=True)
     
     levels = {
-        -1: 'NoLevel',
-        0: 'SVCNTS',
         1: 'L1',
         2: 'L2',
-        3: 'L3'
+        3: 'L3',
+        -1: 'NoLevel',
+        0: 'SVCNTS'
     }
     for value, str in levels.items():
         temp_df = nhanvien_df.loc[nhanvien_df['level']==value]
         temp_df.drop(columns=['level'], axis=1)
+        if os.path.exists(f"F:/RnD/DjangoProject/employee_manager/nhanvien{str}.xlsx"):
+            os.remove(f"F:/RnD/DjangoProject/employee_manager/nhanvien{str}.xlsx")
         temp_df.to_excel(f'nhanvien{str}.xlsx')
 
 
