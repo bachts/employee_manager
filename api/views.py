@@ -6,13 +6,14 @@ from sqlalchemy import create_engine
 from OKR.models import OKR, Log, Source, Formula, Objective
 from Employee.models import Employee, Team, Department
 
-from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly,IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.decorators import  action
 from rest_framework.response import Response
 from django.http import HttpResponse
 from rest_framework import status, permissions, mixins, viewsets
 from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from django_filters import rest_framework as filters
 from django.contrib.auth import authenticate, login , logout
@@ -23,11 +24,13 @@ from django.db import connection
 from OKR import serializers as okr_serializers
 from Employee import serializers as employee_serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.sessions.backends.db import SessionStore
 
 import pandas as pd
 import pandas as pd
 import os
 import openpyxl
+import data_to_excel
 
 # Create your views here.
 
@@ -163,7 +166,7 @@ class RegistrationView(APIView):
                          'status': status.HTTP_201_CREATED})
 
 class LoginView(APIView):
-    permission_classes = [AllowAny,]
+    permission_classes = [AllowAny]
     serializer_class = employee_serializers.LoginSerializer
     # print("day la izerwtwe:")
     def post(self, request):
@@ -180,10 +183,14 @@ class LoginView(APIView):
                 'refresh_token': str(refresh),
                 'access_token': str(refresh.access_token),
                 'access_expires': int(settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()),
-                'refresh_expires': int(settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds())
+                'refresh_expires': int(settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()),
+                # 'user': user,
+                # 'request':request,
             }
             login(request,user=user)
             # print("day la user:",data)
+            # print("day la request:",request)
+            
             return Response(data,status=status.HTTP_200_OK)
         
         return Response({
@@ -191,181 +198,100 @@ class LoginView(APIView):
             'error_code': 400
         }, status=status.HTTP_400_BAD_REQUEST)
 
+# class LogoutView(APIView):
+#     def post(self, request):
+#         # Use Django's built-in logout function to log out the user and invalidate the session
+#         logout(request)
+        
+#         return Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
+def refresh_session_id(request):
+        # Lấy session ID từ cookie
+        current_session_id = request.COOKIES.get(settings.SESSION_COOKIE_NAME)
+
+        # Tạo một session mới và lấy dữ liệu từ session cũ
+        new_session = SessionStore()
+        new_session.cycle_key()
+
+        # Copy dữ liệu từ session cũ sang session mới
+        old_session_data = request.session
+        new_session.update(old_session_data)
+
+        # Lưu trữ dữ liệu của session mới vào session mới trong database (hoặc cache, tùy cơ chế lưu trữ phiên của bạn)
+        new_session.save()
+
+        # Đặt session ID mới vào response cookie
+        response = HttpResponse()
+        response.set_cookie(settings.SESSION_COOKIE_NAME, new_session.session_key, max_age=settings.SESSION_COOKIE_AGE, domain=settings.SESSION_COOKIE_DOMAIN, secure=settings.SESSION_COOKIE_SECURE or None, httponly=settings.SESSION_COOKIE_HTTPONLY or None, samesite=settings.SESSION_COOKIE_SAMESITE)
+
+        return response   
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = employee_serializers.LogoutSerializer
+    
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        refresh_token = request.data.get('refresh_token')
+        # refresh_token = serializer.validated_data['refresh_token']
+        refresh_session_id(request)
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()  # Blacklist the refresh token to invalidate it
+                logout(request)
+                request.session.pop('access_token', None)
+                request.session.pop('refresh_token', None)
+                request.session.pop('user', None)
+                request.session.clear()
+                return Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({'error_message': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error_message': 'Refresh token not provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+ 
 # engine = create_engine('postgresql+psycopg2://postgres:postgres@localhost:5432/okr')
 
 class ExcelView(APIView):
-    permission_classes = [AllowAny,]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     def get(self,request):
-        output_excel = 'F:/RnD/DjangoProject/employee_manager/outputExcel/KPI.xlsx'
+        # to get the location of the current python file
+        basedir = os.getcwd()
+        # to join it with the filename
+        excel_sheet = basedir+'\excelSheet'
+        # output_excel = 'F:/RnD/DjangoProject/employee_manager/outputExcel/KPI.xlsx'
+        output_excel = basedir+'\outputExcel\KPI.xlsx'
         if os.path.exists(output_excel):
             os.remove(output_excel)
-        nhanvien()
-        
-        #List all excel files in folder
-        excel_folder= 'F:/RnD/DjangoProject/employee_manager/'
-        excel_files = [os.path.join(root, file) for root, folder, files in os.walk(excel_folder) for file in files if file.endswith(".xlsx")]
-        # print("gia tri excel:",excel_files)
         levels = {
                 1: 'L1',
                 2: 'L2',
                 3: 'L3',
-                -1: 'NoLevel',
+                # -1: 'NoLevel',
                 0: 'SVCNTS'
                 }
+        
+        data_to_excel.GenerateExcelSheet(excel_sheet,levels)
+        
+        #List all excel files in folder
+        excel_folder = basedir
+        excel_files = [os.path.join(root, file) for root, folder, files in os.walk(excel_folder) for file in files if file.endswith(".xlsx")]
+
+        #Join excel files in to one by sheets
         with pd.ExcelWriter(output_excel) as writer:
             for excel,(value,str) in zip(excel_files,levels.items()): #For each excel
                 # sheet_name = pd.ExcelFile(excel).sheet_names[i] #Find the sheet name
-                sheet_name=f'nhanvien{str}'
-                # print("tên file excel:",sheet_name)
+                sheet_name=f'Nhóm {str}'
                 df = pd.read_excel(excel, engine="openpyxl") #Create a dataframe
                 df.to_excel(writer, sheet_name=sheet_name, index=False) #Write it to a sheet in the output excel
 
+        # tạo workbook lưu trữ excel và response để trả về các file excel
         wb_obj = openpyxl.load_workbook(output_excel)
         if os.path.exists(output_excel):
-            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',status=status.HTTP_200_OK)
             response['Content-Disposition'] = 'attachment; filename=kpi.xlsx'
         wb_obj.save(response)
         return response
 
 
-def nhanvien() -> None:
-    # NO_LEVEL = -1, 'No Level'
-    #     SVCNTS = 0, 'SVCNTS'
-    #     L1 = 1, 'L1'
-    #     L2 = 2, 'L2'
-    #     L3 = 3, 'L3' 
-    cursor= connection.cursor()
-    cursor.execute(
-            '''select   ee.id as employeecode,
-                        full_name as fullName,
-                        level,
-                        ee.team_id as teamId,
-                        name as teamName,
-                        type,
-                        oo.key_result_department as krDep,
-                        oo.key_result_team as krTeam,
-                        oo.key_result_personal as krPer,
-                        ofo.formula_name as formulaName,
-                        ofo.formula_value as formulaValue,
-                        os.source_name as sourceName,
-                        oo.regularity,
-                        oo.unit,
-                        oo.condition,
-                        oo.weight,
-                        oo.result,
-                        oo.weight*oo.result as ratio,
-                        oo.estimated,
-                        oo.actual,
-                        oo.note
-                        FROM "Employee_employee" as ee,
-                            "Employee_team" as et,
-                            "OKR_okr" as oo,
-                            "OKR_formula" as ofo,
-                            "OKR_source" as os
-                        where ee.team_id=et.team_id 
-                            and ee.id=oo.user_id 
-                            and oo.formula_id=ofo.id 
-                            and oo.source_id=os.id'''
-
-            )
-    result = cursor.fetchall()
-    dataframe= pd.DataFrame(result)
-    # column_order = ['employeeId', 'fullName', 'level', 'teamId', 'teamName',
-    #                 'Loại', 'KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', 
-    #                 'Nguồn dữ liệu', 'Định kỳ tính', 'Đơn vị tính', 'Điều kiện', 'Norm',
-    #                 '% Trọng số chỉ tiêu', 'Kết quả', 'Tỷ lệ', 'Tổng thời gian dự kiến/ ước tính công việc (giờ)',
-    #                     'Tổng thời gian thực hiện công việc thực tế (giờ)', 'Note']
-    dataframe.columns= ['employeeId', 'fullName', 'level', 'teamId', 'teamName',
-                    'Loại', 'KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', 
-                    'Nguồn dữ liệu', 'Định kỳ tính', 'Đơn vị tính', 'Điều kiện', 'Norm',
-                    '% Trọng số chỉ tiêu', 'Kết quả', 'Tỷ lệ', 'Tổng thời gian dự kiến/ ước tính công việc (giờ)',
-                        'Tổng thời gian thực hiện công việc thực tế (giờ)', 'Note']               
-    # dataframe.rename(columns={"0": "employeeId"}, inplace=True)
-    # dataframe.rename(columns={"1": "fullName"}, inplace=True)
-    # dataframe.rename(columns={"2": "level"}, inplace=True)
-    # dataframe.rename(columns={"3": "teamId"}, inplace=True)
-    # dataframe.rename(columns={"4": "teamName"}, inplace=True)
-    # dataframe.rename(columns={"5": "Loại"}, inplace=True)
-    # dataframe.rename(columns={"6": "KR phòng"}, inplace=True)
-    # dataframe.rename(columns={"7": "KR team"}, inplace=True)
-    # dataframe.rename(columns={"8": "KR cá nhân"}, inplace=True)
-    # dataframe.rename(columns={"9": "Công thức tính"}, inplace=True)
-    # dataframe.rename(columns={"10": "Nguồn dữ liệu"}, inplace=True)
-    # dataframe.rename(columns={"11": "Định kỳ tính"}, inplace=True)
-    # dataframe.rename(columns={"12": "Đơn vị tính"}, inplace=True)
-    # dataframe.rename(columns={"13": "Điều kiện"}, inplace=True)
-    # dataframe.rename(columns={"14": "Norm"}, inplace=True)
-    # dataframe.rename(columns={"15": "% Trọng số chỉ tiêu"}, inplace=True)
-    # dataframe.rename(columns={"16": "Kết quả"}, inplace=True)
-    # dataframe.rename(columns={"17": "Tỷ lệ"}, inplace=True)
-    # dataframe.rename(columns={"18": "Tổng thời gian dự kiến/ ước tính công việc (giờ)"}, inplace=True)
-    # dataframe.rename(columns={"19": "Tổng thời gian thực hiện công việc thực tế (giờ)"}, inplace=True)
-    # dataframe.rename(columns={"20": "Note"}, inplace=True)
-
-    # print("gia tri cua dataframe:",dataframe)
-
-    nhanvien_df = dataframe
-    # print(nhanvien_df.dtypes)
-    # nhanvien_df.sort_values('employeeId', inplace=True)
-    nhanvien_df.fillna('No data', inplace=True)
-    # nhanvien_df.set_index(['id', 'full_name', 'department_name', 'team_name', 'type', 'okr_kpi_id', 'objective_name', 'type'], inplace=True)
-    
-    levels = {
-        1: 'L1',
-        2: 'L2',
-        3: 'L3',
-        -1: 'NoLevel',
-        0: 'SVCNTS'
-    }
-    for value, str in levels.items():
-        temp_df = nhanvien_df.loc[nhanvien_df['level']==value]
-        temp_df.drop(columns=['level'], axis=1)
-        if os.path.exists(f"F:/RnD/DjangoProject/employee_manager/nhanvien{str}.xlsx"):
-            os.remove(f"F:/RnD/DjangoProject/employee_manager/nhanvien{str}.xlsx")
-        temp_df.to_excel(f'nhanvien{str}.xlsx')
-
-
-def department() -> None:
-    column_order = ['okr_kpi_id', 'full_name', 'department_name', 'type',
-                    'objective_name', 'kr_phong', 'kr_team', 'kr_personal', 'unit',
-                    'condition', 'norm', 'weight', 'ratio',  'result', 'status', 'deadline'] 
-
-    department_df = full_df[column_order]
-    department_df['deadline'] = department_df['deadline'].dt.tz_localize(None)
-
-    def do_nothing(x):
-        return x
-
-    # department_df.set_index(['department_name', 'type'], inplace=True)
-    # print(department_df)
-    department_df = department_df.fillna('No data')
-    # department_df = department_df.groupby(['department_name', 'type', 'okr_kpi_id', 'objective_name', 'weight']).agg({
-    #     'full_name': do_nothing, # lambda x: ', '.join(x),
-    #     'kr_phong': do_nothing,
-    #     'kr_team': do_nothing,
-    #     'unit': do_nothing,
-    #     'condition': do_nothing,
-    #     'norm': do_nothing,
-    #     'weight': do_nothing,
-    #     'ratio': do_nothing,
-    #     'result': do_nothing,
-    #     'deadline': do_nothing,
-    # })
-    department_df = department_df.set_index(['department_name', 'type', 'okr_kpi_id', 'objective_name', 'kr_phong', 'kr_team'])
-
-
-    department_df.to_excel('department.xlsx')
-
-def okr_quarter() -> None:
-
-    
-
-    quarter_df = full_df.loc[full_df['type'] == 'okr']
-    quarter_df['deadline'] = quarter_df['deadline'].dt.tz_localize(None)
-    column_order = ['okr_kpi_id', 'id', 'full_name', 'department_name', 'team_name',
-                    'objective_name', 'kr_phong', 'regularity', 'unit', 'condition',
-                    'result', 'deadline', 'status', 'files']
-    quarter_df = quarter_df[column_order]
-    quarter_df = quarter_df.fillna('No data')
-    quarter_df = quarter_df.set_index(['department_name', 'team_name', 'id', 'full_name', 'okr_kpi_id', 'objective_name'])
-    quarter_df.to_excel('quarter.xlsx')

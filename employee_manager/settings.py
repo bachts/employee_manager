@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework_simplejwt.token_blacklist',
+    'rest_framework_simplejwt',
     'debug_toolbar',
     'rest_framework',
     'django_filters',
@@ -94,9 +95,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'okr',
         'USER': 'postgres',
-        'PASSWORD': '123456',
+        'PASSWORD': 'password',
         'host': 'localhost',
-        'PORT': '5480',
+        'PORT': '5432',
     }
 }
 
@@ -162,9 +163,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         # 'rest_framework.permissions.AllowAny',
         'rest_framework.permissions.IsAuthenticated',
-        'rest_framework.parsers.JSONParser',
-        'rest_framework.parsers.MultiPartParser',
-        'rest_framework.parsers.FormParser',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication', # for testing

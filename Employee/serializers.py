@@ -56,3 +56,5 @@ class EmployeeSerializerExtended(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.EmailField(write_only=True)
     password = serializers.CharField(write_only=True)
+class LogoutSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField(write_only=True)

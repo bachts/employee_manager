@@ -13,6 +13,7 @@ class OKR(models.Model):
 
     objective = models.ForeignKey('Objective', null=True, on_delete=models.SET_NULL)
     user = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
+    kr_id = models.BigIntegerField(max_length=200, null=True, default=1)
     key_result_department = models.TextField(max_length=200, blank=False, null=False, default='department')
     key_result_team = models.TextField(max_length=200, blank=False, null=False, default='team')
     key_result_personal = models.TextField(max_length=200, blank=False, null=False, default='personal')

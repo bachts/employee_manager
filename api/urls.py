@@ -3,6 +3,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt import views as jwt_views
 from . import views
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
 router = DefaultRouter()
 #OKR
@@ -14,6 +15,7 @@ router.register(r'okr', views.OkrViewSet, basename='okr')
 #Employee
 router.register(r'employee', views.EmployeeViewSet, basename='employee')
 router.register(r'team', views.TeamViewSet, basename='team')
+router.register(r'department', views.DepartmentViewSet, basename='department')
 router.register(r'department', views.DepartmentViewSet, basename='department')
 #User
 
@@ -27,6 +29,9 @@ urlpatterns = [
     re_path(r'^registration/?$', views.RegistrationView.as_view(), name='user_registration'),
     path('excel_data/', views.ExcelView.as_view(), name='excel_data'),
     path('login/', views.LoginView.as_view(), name='user_login'),
-    path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+    path('logout/', views.LogoutView.as_view(), name='logout'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # Token refresh
+    path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),  # Token verify
+    # path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 ]
