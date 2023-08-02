@@ -258,6 +258,7 @@ class ExcelView(APIView):
     def get(self,request):
         # to get the location of the current python file
         basedir = os.getcwd()
+        # print("dayasoflka: ",basedir)
         # to join it with the filename
         excel_sheet = basedir+'\excelSheet'
         # output_excel = 'F:/RnD/DjangoProject/employee_manager/outputExcel/KPI.xlsx'
@@ -293,5 +294,3 @@ class ExcelView(APIView):
             response['Content-Disposition'] = 'attachment; filename=kpi.xlsx'
         wb_obj.save(response)
         return response
-
-

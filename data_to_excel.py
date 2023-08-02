@@ -4,74 +4,151 @@ import openpyxl
 from django.db import connection
 from openpyxl import Workbook
 from openpyxl.styles import Font
+from openpyxl import load_workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 def GenerateExcelSheet(basedir,levels) -> None:
-    cursor= connection.cursor()
-    cursor.execute(
-            '''select   ee.id as employeecode,
-                        full_name as fullName,
-                        level,
-                        ee.team_id as teamId,
-                        name as teamName,
-                        type,
-                        oo.kr_id as krId,
-                        oo.key_result_department as krDep,
-                        oo.key_result_team as krTeam,
-                        oo.key_result_personal as krPer,
-                        ofo.formula_name as formulaName,
-                        ofo.formula_value as formulaValue,
-                        os.source_name as sourceName,
-                        oo.regularity,
-                        oo.unit,
-                        oo.condition,
-                        oo.norm,
-                        oo.weight,
-                        oo.result,
-                        oo.weight*oo.result as ratio,
-                        oo.estimated,
-                        oo.actual,
-                        oo.note
-                        FROM "Employee_employee" as ee,
-                            "Employee_team" as et,
-                            "OKR_okr" as oo,
-                            "OKR_formula" as ofo,
-                            "OKR_source" as os
-                        where ee.team_id=et.team_id 
-                            and ee.id=oo.user_id 
-                            and oo.formula_id=ofo.id 
-                            and oo.source_id=os.id'''
+        cursor= connection.cursor()
+        cursor.execute(
+                '''select   ee.id as employeecode,
+                            full_name as name,
+                            level,
+                            ee.team_id as teamId,
+                            name as teamName,
+                            type,
+                            oo.kr_id as krId,
+                            oo.key_result_department as krDep,
+                            oo.key_result_team as krTeam,
+                            oo.key_result_personal as krPer,
+                            ofo.formula_name as formulaName,
+                            ofo.formula_value as formulaValue,
+                            os.source_name as sourceName,
+                            oo.regularity,
+                            oo.unit,
+                            oo.condition,
+                            oo.norm,
+                            oo.weight,
+                            oo.result,
+                            oo.weight*oo.result as ratio,
+                            oo.estimated,
+                            oo.actual,
+                            oo.note
+                            FROM "Employee_employee" as ee,
+                                "Employee_team" as et,
+                                "OKR_okr" as oo,
+                                "OKR_formula" as ofo,
+                                "OKR_source" as os
+                            where ee.team_id=et.team_id 
+                                and ee.id=oo.user_id 
+                                and oo.formula_id=ofo.id 
+                                and oo.source_id=os.id'''
 
-            )
-    result = cursor.fetchall()
-    dataframe= pd.DataFrame(result)
-    # for column in dataframe:  
-    #     print("các column: ", dataframe)
+                )
+        result = cursor.fetchall()
+        dataframe= pd.DataFrame(result)
+        # for column in dataframe:  
+        #     print("các column: ", dataframe)
 
-    dataframe.columns= ['employeeId', 'fullName', 'level', 'teamId', 'teamName',
-                    'Loại', 'krId', 'KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', 'Giá trị tính',
-                    'Nguồn dữ liệu', 'Định kỳ tính', 'Đơn vị tính', 'Điều kiện', 'Norm',
-                    '% Trọng số chỉ tiêu', 'Kết quả', 'Tỷ lệ', 'Tổng thời gian dự kiến/ ước tính công việc (giờ)',
-                        'Tổng thời gian thực hiện công việc thực tế (giờ)', 'Note']    
-   
-    # pandas sẽ group lại các KPI ở đây theo employeeid và kr_id từ đó lấy được các pair kr của các kpi
-    # tính toán tổng "trọng số chỉ tiêu", "kết quả", "tỷ lệ", "tổng thời gian dự kiến" lưu vào thành 1 hashmap theo key là (employee_id, kr_id) và value là một list các tổng đã tính
+        dataframe.columns= ['employeeId', 'Name', 'level', 'teamId', 'teamName',
+                        'Loại', 'krId', 'KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', 'Giá trị tính',
+                        'Nguồn dữ liệu', 'Định kỳ tính', 'Đơn vị tính', 'Điều kiện', 'Norm',
+                        '% Trọng số chỉ tiêu', 'Kết quả', 'Tỷ lệ', 'Tổng thời gian dự kiến/ ước tính công việc (giờ)',
+                            'Tổng thời gian thực hiện công việc thực tế (giờ)', 'Note']    
+    
+        dataframe.sort_values('employeeId', inplace=True)
+        # dataframe.drop(columns=['employeeId'], axis=1, inplace=True)
+        dataframe.drop(columns=['teamId'], axis=1, inplace=True)   
+        dataframe.drop(columns=['Giá trị tính'], axis=1, inplace=True)    
+        dataframe.replace("NUM","%", inplace=True)
+        dataframe.replace("CAT","Đạt/Không đạt", inplace=True)
+        dataframe.replace("MO","Tháng", inplace=True)
+        dataframe.replace("QUAR","Quý", inplace=True)
+        dataframe.replace("EQUAL","=", inplace=True)
+        dataframe.fillna(0, inplace=True)
+        # dataframe.set_index(['id', 'full_name', 'department_name', 'team_name', 'type', 'okr_kpi_id', 'objective_name', 'type'], inplace=True)
+        for value, str in levels.items():
+            temp_df = dataframe.loc[dataframe['level']==value]
+            temp_df.drop(columns=['level'], axis=1)
+            if os.path.exists(basedir+f"\\nhóm {str}.xlsx"):
+                os.remove(basedir+f"\\nhóm {str}.xlsx")
+            temp_df.to_excel(basedir+f'\\nhóm {str}.xlsx')
     
 
-    dataframe.sort_values('employeeId', inplace=True)
-    dataframe.drop(columns=['employeeId'], axis=1, inplace=True)
-    dataframe.drop(columns=['teamId'], axis=1, inplace=True)   
-    dataframe.drop(columns=['Giá trị tính'], axis=1, inplace=True)    
+def formatKPIExcelSheet(file_path) -> None:
+    wb = load_workbook(file_path)
+    sheet = wb.active
+    data = sheet.values
+    columns = next(data)  # Lấy tên cột từ hàng đầu tiên
+    # Tạo DataFrame từ dữ liệu
+    df = pd.DataFrame(data, columns=columns)
+    tsct = '% Trọng số chỉ tiêu'
+    kq = 'Kết quả'
+    tl = 'Tỷ lệ'
+    et = 'Tổng thời gian dự kiến/ ước tính công việc (giờ)'
+    rt = 'Tổng thời gian thực hiện công việc thực tế (giờ)'
+    df[tsct]=df[tsct].astype(int)
+    df[kq]=df[kq].astype(float)
+    df[tl]=df[tl].astype(float)
+    df[et]=df[et].astype(float)
+    df[rt]=df[rt].astype(float)
+    # tính tổng các trường cần tính
+    tsct_sum=df.groupby(['employeeId', 'krId'])[tsct].sum().reset_index()
+    kq_sum=df.groupby(['employeeId', 'krId'])[kq].sum().reset_index()
+    tl_sum=df.groupby(['employeeId', 'krId'])[tl].sum().reset_index()
+    et_sum=df.groupby(['employeeId'])[et].sum().reset_index()
+    rt_sum=df.groupby(['employeeId'])[rt].sum().reset_index()
+    # Tạo DataFrame chứa các tổng
+    df_data_sum = pd.DataFrame({'employeeId': tsct_sum['employeeId'],
+                           'krId': tsct_sum['krId'],
+                           tsct: tsct_sum[tsct],
+                           kq: kq_sum[kq],
+                           tl: tl_sum[tl]})
+    df_time_sum = pd.DataFrame({'employeeId': et_sum['employeeId'],
+                           et: et_sum[et],
+                           rt: rt_sum[rt]}) 
 
-    dataframe.fillna('No data', inplace=True)
-    # dataframe.set_index(['id', 'full_name', 'department_name', 'team_name', 'type', 'okr_kpi_id', 'objective_name', 'type'], inplace=True)
-    for value, str in levels.items():
-        temp_df = dataframe.loc[dataframe['level']==value]
-        temp_df.drop(columns=['level'], axis=1)
-        if os.path.exists(basedir+f"\nhóm {str}.xlsx"):
-            os.remove(basedir+f"\nhóm {str}.xlsx")
-        temp_df.to_excel(f'nhóm {str}.xlsx')
-    # loop qua từng sheet do mỗi sheet đều có format giống nhau
-    workbook = Workbook()
+    # Tìm các KrId lớn nhất(hay kr phía sau) để lưu kết quả giờ làm vào hàng đó (merged_sum_df)
+    max_indices = df_data_sum.groupby('employeeId')['krId'].idxmax()
+    merged_sum_idx_df = pd.merge(max_indices, df_time_sum, on='employeeId', how='left')
+    merged_sum_idx_df.drop(columns=['employeeId'], axis=1, inplace=True)
+    krId_to_idx=merged_sum_idx_df.set_index('krId') 
+    merged_sum_df = pd.merge(df_data_sum, krId_to_idx, left_index=True, right_index=True, how='left')
+    merged_sum_df.fillna(0, inplace=True)
+
+    # sắp xếp lại và lấy vị trí các đoạn cần insert các tổng vào (need_add_index_df), đồng thời dùng các dataframe đã được sắp xếp cho các insert row sau
+    print("đây là sheet: \n",merged_sum_df)
+    sorted_df=df.sort_values(by=['employeeId', 'krId'], ascending=[True, True]).reset_index()
+    sorted_df.drop(columns=['index'], axis=1, inplace=True)
+    print("dataframe mới: \n",sorted_df)
+    index_sorted_df=sorted_df[['employeeId','krId']]
+    # Tạo một cột boolean cho biết các hàng có là bản sao của hàng trước đó hay không
+    is_duplicated = index_sorted_df.duplicated(subset=['employeeId', 'krId'], keep='last')
+    # Chỉ giữ lại các hàng cuối cùng của mỗi cặp giá trị bằng nhau
+    need_add_index_df = index_sorted_df[~is_duplicated]
+    # print("đây là index max -1 : \n",need_add_index_df)
+
+    # thêm các tổng đã tính bên trên vào các index mới tìm ở trên
+    for row in dataframe_to_rows(merged_sum_df, index=False, header=False):
+        print("gia trị index:", index)
+        sheet.insert_rows(index, amount=1)
+        for col, value in enumerate(row, start=1):
+            sheet.cell(row=index, column=col, value=value)
+    new_data = sheet.values
+    new_columns = next(new_data) 
+    new_df = pd.DataFrame(new_data, columns=new_columns)
+    # print("dataframe mới: \n",new_df)
+    # # Thêm một hàng trống sau mỗi nhóm của DataFrame chứa các tổng
+    # df_sum[tsct] = df_sum[tsct].astype(str).str.cat(sep=' ')
+    # df_sum[kq] = df_sum[kq].astype(str).str.cat(sep=' ')
+    # df_sum[tl] = df_sum[tl].astype(str).str.cat(sep=' ')
+    # df_sum = df_sum.replace(r'\s+', ' ', regex=True)
+    # df_sum = df_sum.replace({tsct: {' ': '  '}, kq: {' ': '  '}, tl: {' ': '  '}}, regex=True)
+    # # Thêm các tổng vào DataFrame
+    # df = pd.concat([df, df_sum])
+
+
+
+formatKPIExcelSheet("excelSheet/nhóm L2.xlsx")
 
 
 # def department() -> None:
