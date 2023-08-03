@@ -6,6 +6,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.styles import Alignment
 
 def GenerateExcelSheet(basedir,levels) -> None:
         cursor= connection.cursor()
@@ -73,14 +74,19 @@ def GenerateExcelSheet(basedir,levels) -> None:
                 os.remove(basedir+f"\\nhóm {str}.xlsx")
             temp_df.to_excel(basedir+f'\\nhóm {str}.xlsx')
     
-
-def formatKPIExcelSheet(file_path) -> None:
+def excelToDataframe(file_path):
     wb = load_workbook(file_path)
     sheet = wb.active
     data = sheet.values
     columns = next(data)  # Lấy tên cột từ hàng đầu tiên
     # Tạo DataFrame từ dữ liệu
     df = pd.DataFrame(data, columns=columns)
+    return df
+
+def formatKPIExcelSheet(file_path) -> None:
+    
+    # Tạo DataFrame từ dữ liệu
+    df = excelToDataframe(file_path)
     tsct = '% Trọng số chỉ tiêu'
     kq = 'Kết quả'
     tl = 'Tỷ lệ'
@@ -136,7 +142,7 @@ def formatKPIExcelSheet(file_path) -> None:
             added_row+=1
     sorted_df.drop(columns=[None], axis=1, inplace=True)
     sorted_df = sorted_df.apply(lambda x: '' if x.empty else x)
-    # print("đây là sorted_df mới : \n",sorted_df)
+    print("đây là sorted_df mới : \n",sorted_df)
 
 
     # 1. tạo ra các dataframe chứa tên, level, tên nhóm và dataframe chưa tên các cột  (user_df)
@@ -144,7 +150,7 @@ def formatKPIExcelSheet(file_path) -> None:
     user_df = grouped.size().reset_index(name='Count')
     # print("đây là user_df : \n",user_df)
 
-    # Create a new DataFrame to store the column names (names_df)
+    # Create a new DataFrame to store the column names (names_df)'
     columns_to_drop = ['employeeId', 'Name', 'level', 'teamName', 'krId']
     insert_header_name_df = sorted_df.drop(columns=columns_to_drop, axis=1)
     names_df = pd.DataFrame([insert_header_name_df.columns], columns=insert_header_name_df.columns)
@@ -156,45 +162,72 @@ def formatKPIExcelSheet(file_path) -> None:
     # lấy lần xuất hiện đầu tiên của các giá trị trùng nhau (firstOccurrence_df)
     firstOccurrence_df = sorted_df[sorted_df['FirstOccurrence']].drop(columns='FirstOccurrence')
     firstOccurrence_list = firstOccurrence_df.index
-    # print("đây là firstOccurrence_df : \n",firstOccurrence_list)
+    sorted_df = sorted_df.drop(columns='FirstOccurrence', axis=1)
 
     # 3. dùng openpyxl thêm các header vào các vị trí(2.) là:
     #                                      - các record(1.)
-    #                                      - các record tên cột(1.)
+    #                                      - các record tên cột(1.) 
     #                                      - Tên nhóm là header chính
 
     # Chuyển DataFrame thành một đối tượng Sheet bằng pandas dataframe_to_rows
     user_rows = list(dataframe_to_rows(user_df, index=False, header=True))
     column_name_rows = list(dataframe_to_rows(names_df, index=False, header=True))
-    rows = dataframe_to_rows(sorted_df, index=False, header=True)
+    rows = dataframe_to_rows(insert_header_name_df, index=False, header=True)
 
+    workbook = Workbook()
+    sheet = workbook.active
     # Ghi dữ liệu từ DataFrame vào Workbook
-    level=sorted_df['level'][0].astype(int)
+    level=sorted_df['level'][0].astype(str)
     # Gán tiêu đề cho sheet
     header_text = "Nhóm L"+level
-    sheet.title = header_text
+    sheet.cell(row=1, column=1, value=header_text)
 
-    for i in range(len(sorted_df)):  # 10 là số lần lặp để tạo dữ liệu mẫu, bạn có thể thay đổi số này theo yêu cầu
-        df_idx = i % len(dataframes)  # Lấy index của DataFrame hiện tại (lặp lại từ 0 đến 3)
-        df = dataframes[df_idx]  # Lấy DataFrame hiện tại từ danh sách dataframes
-        for row in dataframe_to_rows(df, index=False, header=False):
-            sheet.append(row)
 
+    # Chèn các dòng vào vị trí xác định (từ dòng 2 trở đi)
+    for r_idx,row in enumerate(rows, 2):
+        for c_idx, value in enumerate(row, 1):
+            sheet.cell(row=r_idx, column=c_idx, value=value)
+            
+    # for i in range(len(sorted_df)):  
+    #     print("đây là df_idx : \n",i)
+    #     insert_df = sorted_df[df_idx]  # Lấy DataFrame hiện tại từ danh sách dataframes
+    #     for row in dataframe_to_rows(insert_df, index=False, header=False):
+    #         sheet.append(row)
+    
     # Chuyển đổi DataFrame thành danh sách các dòng
     
 
     # Chèn các dòng vào vị trí xác định (từ dòng 2 trở đi)
-    for r_idx, row in enumerate(rows, 2):
-        for c_idx, value in enumerate(row, 1):
-            sheet.cell(row=r_idx, column=c_idx, value=value)
-
+    # for r_idx, row in enumerate(rows, 2):
+    #     for c_idx, value in enumerate(row, 1):
+    #         sheet.cell(row=r_idx, column=c_idx, value=value)
+    
+    # Thiết lập tăng kích cỡ header
+    for cell in sheet['1']:
+	    cell.font = Font(size=16, bold=True)
+    # Thiết lập tự động xuống dòng cho tất cả các ô
+    for row in sheet.iter_rows(min_row=1, max_row=1):
+        for cell in row:
+            cell.alignment = Alignment(wrap_text=True)
+            
+    # Thiết lập tự động tăng kích thước các cột
+    for col in sheet.columns:
+        max_length = 0
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2) * 1.2
+        sheet.column_dimensions[col[0].column_letter].width = adjusted_width
     # Lưu Workbook
-    # wb.save(file_path)
+    workbook.save(file_path)
 
 
 
 
-# formatKPIExcelSheet("excelSheet/nhóm L2.xlsx")
+formatKPIExcelSheet("excelSheet/nhóm L2.xlsx")
 
 
 # def department() -> None:
