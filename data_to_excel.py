@@ -106,49 +106,95 @@ def formatKPIExcelSheet(file_path) -> None:
     df_time_sum = pd.DataFrame({'employeeId': et_sum['employeeId'],
                            et: et_sum[et],
                            rt: rt_sum[rt]}) 
-
-    # Tìm các KrId lớn nhất(hay kr phía sau) để lưu kết quả giờ làm vào hàng đó (merged_sum_df)
+    
+    # merge các tổng đã tính ở trên vào một hàng và tìm vị trị cần điền các tổng đó trong dataframe gốc
     max_indices = df_data_sum.groupby('employeeId')['krId'].idxmax()
     merged_sum_idx_df = pd.merge(max_indices, df_time_sum, on='employeeId', how='left')
     merged_sum_idx_df.drop(columns=['employeeId'], axis=1, inplace=True)
     krId_to_idx=merged_sum_idx_df.set_index('krId') 
     merged_sum_df = pd.merge(df_data_sum, krId_to_idx, left_index=True, right_index=True, how='left')
     merged_sum_df.fillna(0, inplace=True)
+    merged_sum_df[et] = merged_sum_df[et].apply(lambda x: '' if x == 0 else x)
+    merged_sum_df[rt] = merged_sum_df[rt].apply(lambda x: '' if x == 0 else x)
+    # print("đây là merged_sum_df: \n",merged_sum_df)
 
-    # sắp xếp lại và lấy vị trí các đoạn cần insert các tổng vào (need_add_index_df), đồng thời dùng các dataframe đã được sắp xếp cho các insert row sau
-    print("đây là sheet: \n",merged_sum_df)
+    # sắp xếp lại và lấy vị trí các đoạn cần insert các tổng vào (need_add_index_df), đồng thời dùng sorted_df cho các thao tác sau (sorted_df) 
     sorted_df=df.sort_values(by=['employeeId', 'krId'], ascending=[True, True]).reset_index()
     sorted_df.drop(columns=['index'], axis=1, inplace=True)
-    print("dataframe mới: \n",sorted_df)
+    # print("dataframe sorted_df: \n",sorted_df)
     index_sorted_df=sorted_df[['employeeId','krId']]
     # Tạo một cột boolean cho biết các hàng có là bản sao của hàng trước đó hay không
     is_duplicated = index_sorted_df.duplicated(subset=['employeeId', 'krId'], keep='last')
     # Chỉ giữ lại các hàng cuối cùng của mỗi cặp giá trị bằng nhau
     need_add_index_df = index_sorted_df[~is_duplicated]
-    # print("đây là index max -1 : \n",need_add_index_df)
-
-    # thêm các tổng đã tính bên trên vào các index mới tìm ở trên
-    for row in dataframe_to_rows(merged_sum_df, index=False, header=False):
-        print("gia trị index:", index)
-        sheet.insert_rows(index, amount=1)
-        for col, value in enumerate(row, start=1):
-            sheet.cell(row=index, column=col, value=value)
-    new_data = sheet.values
-    new_columns = next(new_data) 
-    new_df = pd.DataFrame(new_data, columns=new_columns)
-    # print("dataframe mới: \n",new_df)
-    # # Thêm một hàng trống sau mỗi nhóm của DataFrame chứa các tổng
-    # df_sum[tsct] = df_sum[tsct].astype(str).str.cat(sep=' ')
-    # df_sum[kq] = df_sum[kq].astype(str).str.cat(sep=' ')
-    # df_sum[tl] = df_sum[tl].astype(str).str.cat(sep=' ')
-    # df_sum = df_sum.replace(r'\s+', ' ', regex=True)
-    # df_sum = df_sum.replace({tsct: {' ': '  '}, kq: {' ': '  '}, tl: {' ': '  '}}, regex=True)
-    # # Thêm các tổng vào DataFrame
-    # df = pd.concat([df, df_sum])
+    # print("đây là need_add_index_df : \n",need_add_index_df)
+    # thêm các kết quả đã tính toán ở trên vào cuối của mỗi kpi
+    added_row=0
+    for (index, i) in zip(need_add_index_df.index,range(len(merged_sum_df))):
+            df_new_record = pd.DataFrame(merged_sum_df.iloc[i, :]).T
+            sorted_df=pd.concat([sorted_df.iloc[:index+added_row+1], df_new_record, sorted_df.iloc[index+added_row+1:]]).reset_index(drop=True)
+            added_row+=1
+    sorted_df.drop(columns=[None], axis=1, inplace=True)
+    sorted_df = sorted_df.apply(lambda x: '' if x.empty else x)
+    # print("đây là sorted_df mới : \n",sorted_df)
 
 
+    # 1. tạo ra các dataframe chứa tên, level, tên nhóm và dataframe chưa tên các cột  (user_df)
+    grouped = sorted_df.groupby(['employeeId', 'Name', 'level', 'teamName'])
+    user_df = grouped.size().reset_index(name='Count')
+    # print("đây là user_df : \n",user_df)
 
-formatKPIExcelSheet("excelSheet/nhóm L2.xlsx")
+    # Create a new DataFrame to store the column names (names_df)
+    columns_to_drop = ['employeeId', 'Name', 'level', 'teamName', 'krId']
+    insert_header_name_df = sorted_df.drop(columns=columns_to_drop, axis=1)
+    names_df = pd.DataFrame([insert_header_name_df.columns], columns=insert_header_name_df.columns)
+    # print("đây là user_df : \n",names_df)
+
+    # 2. tạo ra một list chứa các vị trí cần add các record đó vào bằng cách tìm các vị trí đầu xuất hiện của các record
+    # Tạo cột mới để xác định lần xuất hiện đầu tiên của giá trị trùng nhau
+    sorted_df['FirstOccurrence'] = ~sorted_df.duplicated(subset=['employeeId'])
+    # lấy lần xuất hiện đầu tiên của các giá trị trùng nhau (firstOccurrence_df)
+    firstOccurrence_df = sorted_df[sorted_df['FirstOccurrence']].drop(columns='FirstOccurrence')
+    firstOccurrence_list = firstOccurrence_df.index
+    # print("đây là firstOccurrence_df : \n",firstOccurrence_list)
+
+    # 3. dùng openpyxl thêm các header vào các vị trí(2.) là:
+    #                                      - các record(1.)
+    #                                      - các record tên cột(1.)
+    #                                      - Tên nhóm là header chính
+
+    # Chuyển DataFrame thành một đối tượng Sheet bằng pandas dataframe_to_rows
+    user_rows = list(dataframe_to_rows(user_df, index=False, header=True))
+    column_name_rows = list(dataframe_to_rows(names_df, index=False, header=True))
+    rows = dataframe_to_rows(sorted_df, index=False, header=True)
+
+    # Ghi dữ liệu từ DataFrame vào Workbook
+    level=sorted_df['level'][0].astype(int)
+    # Gán tiêu đề cho sheet
+    header_text = "Nhóm L"+level
+    sheet.title = header_text
+
+    for i in range(len(sorted_df)):  # 10 là số lần lặp để tạo dữ liệu mẫu, bạn có thể thay đổi số này theo yêu cầu
+        df_idx = i % len(dataframes)  # Lấy index của DataFrame hiện tại (lặp lại từ 0 đến 3)
+        df = dataframes[df_idx]  # Lấy DataFrame hiện tại từ danh sách dataframes
+        for row in dataframe_to_rows(df, index=False, header=False):
+            sheet.append(row)
+
+    # Chuyển đổi DataFrame thành danh sách các dòng
+    
+
+    # Chèn các dòng vào vị trí xác định (từ dòng 2 trở đi)
+    for r_idx, row in enumerate(rows, 2):
+        for c_idx, value in enumerate(row, 1):
+            sheet.cell(row=r_idx, column=c_idx, value=value)
+
+    # Lưu Workbook
+    # wb.save(file_path)
+
+
+
+
+# formatKPIExcelSheet("excelSheet/nhóm L2.xlsx")
 
 
 # def department() -> None:
