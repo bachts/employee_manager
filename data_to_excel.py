@@ -7,7 +7,7 @@ from openpyxl.styles import Font
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Alignment
-from itertools import zip_longest
+from openpyxl.styles import PatternFill, Border, Side
 
 def GenerateExcelSheet(basedir, levels) -> None:
         cursor = connection.cursor()
@@ -83,6 +83,7 @@ def excelToDataframe(file_path):
     columns = next(data)  # Lấy tên cột từ hàng đầu tiên
     # Tạo DataFrame từ dữ liệu
     df = pd.DataFrame(data, columns=columns)
+    wb.close()
     return df
 
 
@@ -155,6 +156,8 @@ def formatKPIExcelSheet(file_path) -> None:
     # 1. tạo ra các dataframe chứa tên, level, tên nhóm và dataframe chưa tên các cột  (user_df)
     grouped = sorted_df.groupby(['employeeId', 'Name', 'level', 'teamName'])
     user_df = grouped.size().reset_index(name='Count')
+    user_df.index.name = 'Index_column'
+    user_df.drop(columns=['Count'], axis=1, inplace=True)
     # print("đây là user_df : \n",user_df)
 
     # Create a new DataFrame to store the column names (names_df)'
@@ -183,58 +186,75 @@ def formatKPIExcelSheet(file_path) -> None:
     if len(user_rows) != len(firstOccurrence_list):
         raise ValueError(
             "Số lượng dòng cần thêm phải bằng số dự liệu muốn thêm!")
-    column_name_rows = list(dataframe_to_rows(
-        names_df, index=False, header=True))
+    
+    # tạo ra 1 dataframe có 3 hàng là tên các cột cần add vào sheet
+    for i in range(len(user_rows)):
+         names_df = pd.concat([names_df, names_df], ignore_index=True)
+
+    # lấy vị trí các cột cần mở rộng khi align bằng openpyxl
+    column_names = ['KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', et, rt, 'Note']
+    column_positions = [names_df.columns.get_loc(col_name) for col_name in column_names]
+
+    column_name_rows = list(dataframe_to_rows(names_df, index=False, header=False))
     rows = dataframe_to_rows(insert_header_name_df, index=False, header=False)
 
+# ---------------------------------------------------------------------------------
+    # tạo một sheet excel mới
     workbook = Workbook()
     sheet = workbook.active
     # Ghi dữ liệu từ DataFrame vào Workbook
-    level = sorted_df['level'][0].astype(str)
+    try:
+        level = sorted_df['level'][0].astype(int).astype(str)
+    except ValueError:
+         print("Level đang không là số!")
+         level = sorted_df['level'][0].astype(str)
     # Gán tiêu đề cho sheet
     header_text = "Nhóm L"+level
     sheet.cell(row=1, column=1, value=header_text)
 
     # Chèn các dòng vào vị trí xác định (từ dòng 2 trở đi)
+    data_font = Font(name='Arial',size=11, bold=False)
     for r_idx, row in enumerate(rows, 2):
         for c_idx, value in enumerate(row, 1):
             sheet.cell(row=r_idx, column=c_idx, value=value)
+            sheet.cell(row=r_idx, column=c_idx, value=value).font = data_font
 
-    for insert_index, row_user_data in zip(firstOccurrence_list, user_rows):
-        sheet.insert_rows(insert_index+2, 1)
-        sheet.insert_rows(insert_index+3, 1)
+    # thêm các dòng thông tin người dung và title của các trường vào sheet, đồng thời thêm màu, sửa font
+    light_blue_fill = PatternFill(start_color='B8CCE4', end_color='B8CCE4', fill_type='solid')
+    dark_blue_fill = PatternFill(start_color='365072', end_color='365072', fill_type='solid')
+    title_font = Font(name='Arial',size=11, bold=True)
+    
+    added_sheet_row = 0
+    for insert_index, row_user_data,row_column_name in zip(firstOccurrence_list, user_rows,column_name_rows):       
+        user_insert = insert_index+added_sheet_row+2
+        title_insert = insert_index+added_sheet_row+3
+        sheet.insert_rows(user_insert, 1)
+        sheet.insert_rows(title_insert, 1)
         for col_idx_user,user_value in enumerate(row_user_data, 1):
-            sheet.cell(row=insert_index+2, column=col_idx_user, value=user_value)
-        for col_idx,column_name_value in enumerate(column_name_rows,1):
-            sheet.cell(row=insert_index+3, column=col_idx, value=column_name_value)
+            sheet.cell(row=user_insert, column=col_idx_user, value=user_value)
+            sheet.cell(row=user_insert, column=col_idx_user).fill = light_blue_fill
+            sheet.cell(row=user_insert, column=col_idx_user).font = title_font
+        for col_idx,column_name_value in enumerate(row_column_name,1):
+            sheet.cell(row=title_insert, column=col_idx, value=column_name_value)
+            sheet.cell(row=title_insert, column=col_idx).fill = dark_blue_fill
+            sheet.cell(row=title_insert, column=col_idx).font = title_font
 
-                
-    # for insert_index  in firstOccurrence_list:
-    #     print("đây là insert_index : \n",insert_index)
-    #     sheet.insert_rows(insert_index+3, 1)
 
-            
-    # for i in range(len(sorted_df)):  
-    #     print("đây là df_idx : \n",i)
-    #     insert_df = sorted_df[df_idx]  # Lấy DataFrame hiện tại từ danh sách dataframes
-    #     for row in dataframe_to_rows(insert_df, index=False, header=False):
-    #         sheet.append(row)
-    
-    # Chuyển đổi DataFrame thành danh sách các dòng
-    
+        if(insert_index!=0):
+             blank_insert = insert_index+added_sheet_row+2
+             sheet.insert_rows(blank_insert, 1) 
+             added_sheet_row+=3       
+        else:
+             added_sheet_row+=2
 
-    # Chèn các dòng vào vị trí xác định (từ dòng 2 trở đi)
-    # for r_idx, row in enumerate(rows, 2):
-    #     for c_idx, value in enumerate(row, 1):
-    #         sheet.cell(row=r_idx, column=c_idx, value=value)
-    
     # Thiết lập tăng kích cỡ header
     for cell in sheet['1']:
 	    cell.font = Font(size=16, bold=True)
     # Thiết lập tự động xuống dòng cho tất cả các ô
     for row in sheet.iter_rows(min_row=1, max_row=1):
         for cell in row:
-            cell.alignment = Alignment(wrap_text=True)
+            # Thiết lập tự động align vào giữa cho toàn bộ text trong sheet
+            cell.alignment = Alignment(wrap_text=True,horizontal='center', vertical='center')
             
     # Thiết lập tự động tăng kích thước các cột
     # for col in sheet.columns:
@@ -247,21 +267,47 @@ def formatKPIExcelSheet(file_path) -> None:
     #             pass
     #     adjusted_width = (max_length + 2) * 1.2
     #     sheet.column_dimensions[col[0].column_letter].width = adjusted_width
+
+    # Đặt viền cho các cell
+    border = Border(left=Side(border_style='thin', color='000000'),
+                    right=Side(border_style='thin', color='000000'),
+                    top=Side(border_style='thin', color='000000'),
+                    bottom=Side(border_style='thin', color='000000'))
+    # Loop through each worksheet in the workbook
+    for sheet in workbook.worksheets:
+        # Loop through each row in the worksheet
+        for row in sheet.iter_rows():
+            # Loop through each cell in the row
+            for cell in row:
+                # Set wrap_text to True to automatically wrap text
+                cell.alignment = openpyxl.styles.Alignment(wrapText=True)
+                # thêm viền
+                cell.border = border
+
+        # Auto-adjust row height for all rows in the worksheet
+        for row in sheet.iter_rows():
+            sheet.row_dimensions[row[0].row].auto_size = True
     
-    # Thiết lập tự động align vào giữa cho toàn bộ text trong sheet
-    for row in sheet.iter_rows():
-        for cell in row:
-            cell.alignment = Alignment(horizontal='center', vertical='center')
-    
+            
+    # Define a dictionary to store the desired column widths
+    # column_widths = {'KR phòng': 20, 'KR team': 20, 'KR cá nhân': 20, 'Note': 20}  
+
+    # Update the column widths
+    for index in column_positions:
+        print("index can tang do rong:",index+1)
+        # đoạn này index +1 là vì vào sheet excel các index tính từ 1 chứ không còn là 0 như ở dataframe
+        column_letter = openpyxl.utils.get_column_letter(index+1)
+        sheet.column_dimensions[column_letter].width = 30
+        
     # Đọc nội dung của sheet thành DataFrame
     data = sheet.values
     columns = next(data)  # Lấy tên cột từ dòng đầu tiên
     final_df = pd.DataFrame(data, columns=columns)  
     print("đây là excel file cuối : \n",final_df)
-    
-    # Lưu Workbook
-    # workbook.save(file_path)
 
+    # Lưu Workbook
+    workbook.close()
+    workbook.save(file_path)
 
 
 
