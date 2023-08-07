@@ -276,16 +276,9 @@ class ExcelView(APIView):
         data_to_excel.GenerateExcelSheet(excel_sheet,levels)
         
         #List all excel files in folder
-        excel_folder = basedir
+        excel_folder = excel_sheet
         excel_files = [os.path.join(root, file) for root, folder, files in os.walk(excel_folder) for file in files if file.endswith(".xlsx")]
-
-        #Join excel files in to one by sheets
-        with pd.ExcelWriter(output_excel) as writer:
-            for excel,(value,str) in zip(excel_files,levels.items()): #For each excel
-                # sheet_name = pd.ExcelFile(excel).sheet_names[i] #Find the sheet name
-                sheet_name=f'Nhóm {str}'
-                df = pd.read_excel(excel, engine="openpyxl") #Create a dataframe
-                df.to_excel(writer, sheet_name=sheet_name, index=False) #Write it to a sheet in the output excel
+        data_to_excel.synthesizeExcelFilebySheet(excel_files,output_excel,levels)
 
         # tạo workbook lưu trữ excel và response để trả về các file excel
         wb_obj = openpyxl.load_workbook(output_excel)
