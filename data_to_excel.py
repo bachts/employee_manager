@@ -9,14 +9,15 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Alignment
 from openpyxl.styles import PatternFill, Border, Side
 
-def GenerateExcelSheet(basedir, levels) -> None:
+def GenerateExcelSheet(basedir, levels,data_dictionary) -> None:
         cursor = connection.cursor()
+        # print("dictionary_data: ",data_dictionary)
         cursor.execute(
-                '''select   ee.id as employeecode,
+                '''select   ee.id as employeeId,
                             full_name as name,
                             level,
                             ee.team_id as teamId,
-                            name as teamName,
+                            et.name as teamName,
                             type,
                             oo.kr_id as krId,
                             oo.key_result_department as krDep,
@@ -39,17 +40,22 @@ def GenerateExcelSheet(basedir, levels) -> None:
                                 "Employee_team" as et,
                                 "OKR_okr" as oo,
                                 "OKR_formula" as ofo,
-                                "OKR_source" as os
+                                "OKR_source" as os,
+                                "Employee_department" as ed
                             where ee.team_id=et.team_id
                                 and ee.id=oo.user_id
                                 and oo.formula_id=ofo.id
-                                and oo.source_id=os.id'''
+                                and oo.source_id=os.id
+                                and oo.deadline_month = %(month)s
+								and oo.deadline_year = %(year)s
+                                and ed.department_id = %(department_id)s
+                                '''
 
-                )
+                , data_dictionary)
+
         result = cursor.fetchall()
         dataframe = pd.DataFrame(result)
-        # for column in dataframe:
-        #     print("các column: ", dataframe)
+        # print("các column: ", dataframe)
 
         dataframe.columns = ['employeeId', 'Name', 'level', 'teamId', 'teamName',
                         'Loại', 'krId', 'KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', 'Giá trị tính',
@@ -74,8 +80,10 @@ def GenerateExcelSheet(basedir, levels) -> None:
             file_directory = basedir+f"\\nhóm {str}.xlsx"
             if os.path.exists(file_directory):
                 os.remove(file_directory)
-            temp_df.to_excel(file_directory)
-            formatKPIExcelSheet(file_directory)
+            if not temp_df.empty:
+                temp_df.to_excel(file_directory)
+                formatKPIExcelSheet(file_directory)
+                
 
 
 def excelToDataframe(file_path):
@@ -85,6 +93,7 @@ def excelToDataframe(file_path):
     columns = next(data)  # Lấy tên cột từ hàng đầu tiên
     # Tạo DataFrame từ dữ liệu
     df = pd.DataFrame(data, columns=columns)
+    print("dataframe file_directory df: \n",df)
     wb.close()
     return df
 
@@ -93,6 +102,7 @@ def formatKPIExcelSheet(file_path) -> None:
 
     # Tạo DataFrame từ dữ liệu
     df = excelToDataframe(file_path)
+    # print("dataframe sorted_df: \n",df)
     tsct = '% Trọng số chỉ tiêu'
     kq = 'Kết quả'
     tl = 'Tỷ lệ'
@@ -139,8 +149,7 @@ def formatKPIExcelSheet(file_path) -> None:
     # print("dataframe sorted_df: \n",sorted_df)
     index_sorted_df = sorted_df[['employeeId', 'krId']]
     # Tạo một cột boolean cho biết các hàng có là bản sao của hàng trước đó hay không
-    is_duplicated = index_sorted_df.duplicated(
-        subset=['employeeId', 'krId'], keep='last')
+    is_duplicated = index_sorted_df.duplicated(subset=['employeeId', 'krId'], keep='last')
     # Chỉ giữ lại các hàng cuối cùng của mỗi cặp giá trị bằng nhau
     need_add_index_df = index_sorted_df[~is_duplicated]
     # print("đây là need_add_index_df : \n",need_add_index_df)
@@ -197,10 +206,6 @@ def formatKPIExcelSheet(file_path) -> None:
     # tạo ra 1 dataframe có 3 hàng là tên các cột cần add vào sheet
     for i in range(len(user_rows)):
          names_df = pd.concat([names_df, names_df], ignore_index=True)
-
-    # lấy vị trí các cột cần mở rộng khi align bằng openpyxl
-    column_names = ['KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', et, rt, 'Note']
-    column_positions = [names_df.columns.get_loc(col_name) for col_name in column_names]
 
     # lấy vị trí các cột cần mở rộng khi align bằng openpyxl
     sum_column_names = ['% Trọng số chỉ tiêu', 'Kết quả', 'Tỷ lệ', et,rt]
@@ -309,12 +314,23 @@ def formatKPIExcelSheet(file_path) -> None:
     # Define a dictionary to store the desired column widths
     # column_widths = {'KR phòng': 20, 'KR team': 20, 'KR cá nhân': 20, 'Note': 20}  
 
+    # lấy vị trí các cột cần mở rộng khi align bằng openpyxl
+    column_names_30 = ['KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', 'Note']
+    column_positions_30 = [names_df.columns.get_loc(col_name) for col_name in column_names_30]
+
+    column_names_20 = ['Loại', et, rt]
+    column_positions_20 = [names_df.columns.get_loc(col_name) for col_name in column_names_20]
+
     # Update the column widths
-    for index in column_positions:
-        # print("index can tang do rong:",index+1)
+    for index in column_positions_30:
         # đoạn này index +1 là vì vào sheet excel các index tính từ 1 chứ không còn là 0 như ở dataframe
         column_letter = openpyxl.utils.get_column_letter(index+1)
         sheet.column_dimensions[column_letter].width = 30
+    # Update the column widths
+    for index in column_positions_20:
+        # đoạn này index +1 là vì vào sheet excel các index tính từ 1 chứ không còn là 0 như ở dataframe
+        column_letter = openpyxl.utils.get_column_letter(index+1)
+        sheet.column_dimensions[column_letter].width = 20
         
     # Đọc nội dung của sheet thành DataFrame
     # data = sheet.values
@@ -383,6 +399,7 @@ def synthesizeExcelFilebySheet(listDirectory,targetDirectory,levels) -> None:
         # Sao chép độ rộng cột từ sheet gốc sang sheet tổng hợp
         for col in sheet_original.column_dimensions:
             sheet_combined.column_dimensions[col] = sheet_original.column_dimensions[col]
+        
 
     # Xóa sheet mặc định trong Workbook tổng hợp
     if 'Sheet' in wb_combined.sheetnames:

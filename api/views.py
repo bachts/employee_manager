@@ -254,8 +254,20 @@ class LogoutView(APIView):
 # engine = create_engine('postgresql+psycopg2://postgres:postgres@localhost:5432/okr')
 
 class ExcelView(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    def get(self,request):
+    permission_classes = [AllowAny]
+    serializer_class = employee_serializers.exportExcelSerializer
+
+    def post(self,request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        month = request.data.get('month')
+        year = request.data.get('year')
+        department_id = request.data.get('department_id')
+        print("day là department_id",department_id)
+        data_dictionary={}
+        data_dictionary['month'] = month
+        data_dictionary['year'] = year
+        data_dictionary['department_id'] = department_id
         # to get the location of the current python file
         basedir = os.getcwd()
         # print("dayasoflka: ",basedir)
@@ -273,7 +285,7 @@ class ExcelView(APIView):
                 0: 'SVCNTS'
                 }
         
-        data_to_excel.GenerateExcelSheet(excel_sheet,levels)
+        data_to_excel.GenerateExcelSheet(excel_sheet,levels,data_dictionary)
         
         #List all excel files in folder
         excel_folder = excel_sheet

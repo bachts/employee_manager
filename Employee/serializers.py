@@ -56,5 +56,11 @@ class EmployeeSerializerExtended(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.EmailField(write_only=True)
     password = serializers.CharField(write_only=True)
+
 class LogoutSerializer(serializers.Serializer):
     refresh_token = serializers.CharField(write_only=True)
+
+class exportExcelSerializer(serializers.Serializer):
+    month = serializers.IntegerField(write_only=True)
+    year = serializers.IntegerField(write_only=True)
+    department_id= serializers.IntegerField(write_only=True)
