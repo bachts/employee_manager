@@ -259,12 +259,13 @@ class ExcelView(APIView):
 
     def post(self,request):
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        data_dictionary={}
+        quater = request.data.get('quater')
         month = request.data.get('month')
         year = request.data.get('year')
         department_id = request.data.get('department_id')
-        print("day là department_id",department_id)
-        data_dictionary={}
+        # print("day là department_id",department_id)
+        data_dictionary['quater'] = quater
         data_dictionary['month'] = month
         data_dictionary['year'] = year
         data_dictionary['department_id'] = department_id

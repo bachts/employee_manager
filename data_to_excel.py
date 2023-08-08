@@ -8,12 +8,12 @@ from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Alignment
 from openpyxl.styles import PatternFill, Border, Side
+from openpyxl.utils import range_boundaries
 
 def GenerateExcelSheet(basedir, levels,data_dictionary) -> None:
         cursor = connection.cursor()
         # print("dictionary_data: ",data_dictionary)
-        cursor.execute(
-                '''select   ee.id as employeeId,
+        sql_query='''select ee.id as employeeId,
                             full_name as name,
                             level,
                             ee.team_id as teamId,
@@ -46,13 +46,19 @@ def GenerateExcelSheet(basedir, levels,data_dictionary) -> None:
                                 and ee.id=oo.user_id
                                 and oo.formula_id=ofo.id
                                 and oo.source_id=os.id
-                                and oo.deadline_month = %(month)s
-								and oo.deadline_year = %(year)s
-                                and ed.department_id = %(department_id)s
-                                '''
-
-                , data_dictionary)
-
+                                
+                    '''
+        # Kiểm tra và thêm điều kiện từ dictionary
+        if data_dictionary.get("quater")!='':
+            sql_query += " and oo.deadline_quarter = %(quater)s"
+        if data_dictionary.get("month")!='':
+            sql_query += " and oo.deadline_month = %(month)s"
+        if data_dictionary.get("year")!='':
+            sql_query += " and oo.deadline_year = %(year)s"
+        if data_dictionary.get("department_id")!='':
+            sql_query += " and ed.department_id = %(department_id)s"
+   
+        cursor.execute(sql_query, data_dictionary)
         result = cursor.fetchall()
         dataframe = pd.DataFrame(result)
         # print("các column: ", dataframe)
@@ -64,7 +70,7 @@ def GenerateExcelSheet(basedir, levels,data_dictionary) -> None:
                             'Tổng thời gian thực hiện công việc thực tế (giờ)', 'Note']
 
         dataframe.sort_values('employeeId', inplace=True)
-        # dataframe.drop(columns=['employeeId'], axis=1, inplace=True)
+        # dataframe.drop(columns=[ei], axis=1, inplace=True)
         dataframe.drop(columns=['teamId'], axis=1, inplace=True)
         dataframe.drop(columns=['Giá trị tính'], axis=1, inplace=True)
         dataframe.replace("NUM", "%", inplace=True)
@@ -93,7 +99,6 @@ def excelToDataframe(file_path):
     columns = next(data)  # Lấy tên cột từ hàng đầu tiên
     # Tạo DataFrame từ dữ liệu
     df = pd.DataFrame(data, columns=columns)
-    print("dataframe file_directory df: \n",df)
     wb.close()
     return df
 
@@ -103,6 +108,18 @@ def formatKPIExcelSheet(file_path) -> None:
     # Tạo DataFrame từ dữ liệu
     df = excelToDataframe(file_path)
     # print("dataframe sorted_df: \n",df)
+    # tạo biến tên cho các trường trong dataframe để sử dụng sau
+    krp = 'KR phòng'
+    krt = 'KR team'
+    krc = 'KR cá nhân'
+    ctt = 'Công thức tính'
+    ei = 'employeeId'
+    ki = 'krId'
+    type = 'Loại'
+    name = 'Name'
+    lv = 'level'
+    tn = 'teamName'
+    note = 'Note'
     tsct = '% Trọng số chỉ tiêu'
     kq = 'Kết quả'
     tl = 'Tỷ lệ'
@@ -114,27 +131,27 @@ def formatKPIExcelSheet(file_path) -> None:
     df[et] = df[et].astype(float)
     df[rt] = df[rt].astype(float)
     # tính tổng các trường cần tính
-    tsct_sum = df.groupby(['employeeId', 'krId'])[tsct].sum().reset_index()
-    kq_sum = df.groupby(['employeeId', 'krId'])[kq].sum().reset_index()
-    tl_sum = df.groupby(['employeeId', 'krId'])[tl].sum().reset_index()
-    et_sum = df.groupby(['employeeId'])[et].sum().reset_index()
-    rt_sum = df.groupby(['employeeId'])[rt].sum().reset_index()
+    tsct_sum = df.groupby([ei, ki])[tsct].sum().reset_index()
+    kq_sum = df.groupby([ei, ki])[kq].sum().reset_index()
+    tl_sum = df.groupby([ei, ki])[tl].sum().reset_index()
+    et_sum = df.groupby([ei])[et].sum().reset_index()
+    rt_sum = df.groupby([ei])[rt].sum().reset_index()
     # Tạo DataFrame chứa các tổng
-    df_data_sum = pd.DataFrame({'employeeId': tsct_sum['employeeId'],
-                           'krId': tsct_sum['krId'],
+    df_data_sum = pd.DataFrame({ei: tsct_sum[ei],
+                           ki: tsct_sum[ki],
                            tsct: tsct_sum[tsct],
                            kq: kq_sum[kq],
                            tl: tl_sum[tl]})
-    df_time_sum = pd.DataFrame({'employeeId': et_sum['employeeId'],
+    df_time_sum = pd.DataFrame({ei: et_sum[ei],
                            et: et_sum[et],
                            rt: rt_sum[rt]})
 
     # merge các tổng đã tính ở trên vào một hàng và tìm vị trị cần điền các tổng đó trong dataframe gốc
-    max_indices = df_data_sum.groupby('employeeId')['krId'].idxmax()
+    max_indices = df_data_sum.groupby(ei)[ki].idxmax()
     merged_sum_idx_df = pd.merge(
-        max_indices, df_time_sum, on='employeeId', how='left')
-    merged_sum_idx_df.drop(columns=['employeeId'], axis=1, inplace=True)
-    krId_to_idx = merged_sum_idx_df.set_index('krId')
+        max_indices, df_time_sum, on=ei, how='left')
+    merged_sum_idx_df.drop(columns=[ei], axis=1, inplace=True)
+    krId_to_idx = merged_sum_idx_df.set_index(ki)
     merged_sum_df = pd.merge(df_data_sum, krId_to_idx,
                              left_index=True, right_index=True, how='left')
     merged_sum_df.fillna(0, inplace=True)
@@ -143,13 +160,13 @@ def formatKPIExcelSheet(file_path) -> None:
     # print("đây là merged_sum_df: \n",merged_sum_df)
 
     # sắp xếp lại và lấy vị trí các đoạn cần insert các tổng vào (need_add_index_df), đồng thời dùng sorted_df cho các thao tác sau (sorted_df)
-    sorted_df = df.sort_values(by=['employeeId', 'krId'], ascending=[
+    sorted_df = df.sort_values(by=[ei, ki], ascending=[
                                True, True]).reset_index()
     sorted_df.drop(columns=['index'], axis=1, inplace=True)
     # print("dataframe sorted_df: \n",sorted_df)
-    index_sorted_df = sorted_df[['employeeId', 'krId']]
+    index_sorted_df = sorted_df[[ei, ki]]
     # Tạo một cột boolean cho biết các hàng có là bản sao của hàng trước đó hay không
-    is_duplicated = index_sorted_df.duplicated(subset=['employeeId', 'krId'], keep='last')
+    is_duplicated = index_sorted_df.duplicated(subset=[ei, ki], keep='last')
     # Chỉ giữ lại các hàng cuối cùng của mỗi cặp giá trị bằng nhau
     need_add_index_df = index_sorted_df[~is_duplicated]
     # print("đây là need_add_index_df : \n",need_add_index_df)
@@ -171,22 +188,22 @@ def formatKPIExcelSheet(file_path) -> None:
     # print("đây là sorted_df mới : \n",sorted_df)
 
     # 1. tạo ra các dataframe chứa tên, level, tên nhóm và dataframe chưa tên các cột  (user_df)
-    grouped = sorted_df.groupby(['employeeId', 'Name', 'level', 'teamName'])
+    grouped = sorted_df.groupby([ei, name, lv, tn])
     user_df = grouped.size().reset_index(name='Count')
     user_df.insert(0, 'Index', user_df.index+1)
     user_df.drop(columns=['Count'], axis=1, inplace=True)
     # print("đây là user_df : \n",user_df)
 
-    # Create a new DataFrame to store the column names (names_df)'
-    columns_to_drop = ['employeeId', 'Name', 'level', 'teamName', 'krId']
+    # Create a new DataFrame to store the column names (title_df)'
+    columns_to_drop = [ei, name, lv, tn, ki]
     insert_header_name_df = sorted_df.drop(columns=columns_to_drop, axis=1)
-    names_df = pd.DataFrame([insert_header_name_df.columns],
+    title_df = pd.DataFrame([insert_header_name_df.columns],
                             columns=insert_header_name_df.columns)
-    # print("đây là user_df : \n",names_df)
+    # print("đây là user_df : \n",title_df)
 
     # 2. tạo ra một list chứa các vị trí cần add các record đó vào bằng cách tìm các vị trí đầu xuất hiện của các record
     # Tạo cột mới để xác định lần xuất hiện đầu tiên của giá trị trùng nhau
-    sorted_df['FirstOccurrence'] = ~sorted_df.duplicated(subset=['employeeId'])
+    sorted_df['FirstOccurrence'] = ~sorted_df.duplicated(subset=[ei])
     # lấy lần xuất hiện đầu tiên của các giá trị trùng nhau (firstOccurrence_df)
     firstOccurrence_df = sorted_df[sorted_df['FirstOccurrence']].drop(
         columns='FirstOccurrence')
@@ -205,13 +222,13 @@ def formatKPIExcelSheet(file_path) -> None:
     
     # tạo ra 1 dataframe có 3 hàng là tên các cột cần add vào sheet
     for i in range(len(user_rows)):
-         names_df = pd.concat([names_df, names_df], ignore_index=True)
+         title_df = pd.concat([title_df, title_df], ignore_index=True)
 
     # lấy vị trí các cột cần mở rộng khi align bằng openpyxl
-    sum_column_names = ['% Trọng số chỉ tiêu', 'Kết quả', 'Tỷ lệ', et,rt]
-    sum_column_positions = [names_df.columns.get_loc(col_name) for col_name in sum_column_names]
+    sum_column_names = [tsct, kq, tl, et,rt]
+    sum_column_positions = [title_df.columns.get_loc(col_name) for col_name in sum_column_names]
 
-    column_name_rows = list(dataframe_to_rows(names_df, index=False, header=False))
+    column_name_rows = list(dataframe_to_rows(title_df, index=False, header=False))
     rows = dataframe_to_rows(insert_header_name_df, index=False, header=False)
 
 # ---------------------------------------------------------------------------------
@@ -220,16 +237,19 @@ def formatKPIExcelSheet(file_path) -> None:
     sheet = workbook.active
     # Ghi dữ liệu từ DataFrame vào Workbook
     try:
-        level = sorted_df['level'][0].astype(int).astype(str)
+        level = sorted_df[lv][0].astype(int).astype(str)
     except ValueError:
-         print("Level đang không là số!")
-         level = sorted_df['level'][0].astype(str)
+        print("Level đang không là số!")
+        level = sorted_df[lv][0].astype(str)
     # Gán tiêu đề cho sheet
     Header_font = Font(name='Arial',size=16, bold=True)
-    header_text = "Nhóm L"+level
+    if(level==0):
+        header_text="nhóm SVCNTS"
+    else:
+        header_text=f"nhóm L{level}"
     sheet.cell(row=1, column=1, value=header_text).font = Header_font
     # Merge các ô trong dòng đầu tiên
-    sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(names_df))
+    sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=title_df.shape[1])
 
     # Chèn các dòng vào vị trí xác định (từ dòng 2 trở đi)
     data_font = Font(name='Arial',size=11, bold=False)
@@ -242,9 +262,22 @@ def formatKPIExcelSheet(file_path) -> None:
     light_blue_fill = PatternFill(start_color='B8CCE4', end_color='B8CCE4', fill_type='solid')
     dark_blue_fill = PatternFill(start_color='365072', end_color='365072', fill_type='solid')
     light_yellow_fill = PatternFill(start_color='FFFF99', end_color='FFFF99', fill_type='solid')
+    light_green_fill = PatternFill(start_color='A4C639', end_color='A4C639', fill_type='solid')
+    dark_green_fill = PatternFill(start_color="008000", end_color="008000", fill_type="solid")
     user_title_font = Font(name='Arial',size=11, bold=True,color="FF0000")
     title_font = Font(name='Arial',size=11, bold=True,color="FFFFFF")
     
+    # lấy vị trí các column cần đổi màu xanh lá cây nhạt
+    column_light_green_fill = [tsct, kq, tl, et, note]
+    column_positions_light_green_fill = [title_df.columns.get_loc(col_name) for col_name in column_light_green_fill]
+
+    # # lấy vị trí các column cần đổi màu xanh lá cây đậm
+    # column_dark_green_fill = [tsct, 'KR team', 'KR cá nhân', 'Công thức tính', note]
+    # column_positions_dark_green_fill = [title_df.columns.get_loc(col_name) for col_name in column_dark_green_fill]
+
+    # lấy vị trí các column cần đổi màu xanh da trời nhạt
+    column_light_blue_fill = [rt]
+    column_positions_light_blue_fill = [title_df.columns.get_loc(col_name) for col_name in column_light_blue_fill]
 
     for row_sum_index in need_add_index_df.index:
         for col_sum_index in sum_column_positions:
@@ -259,15 +292,22 @@ def formatKPIExcelSheet(file_path) -> None:
         title_insert = insert_index+added_sheet_row+3
         sheet.insert_rows(user_insert, 1)
         sheet.insert_rows(title_insert, 1)
+        # thêm dòng thông tin user
         for col_idx_user,user_value in enumerate(row_user_data, 1):
             sheet.cell(row=user_insert, column=col_idx_user, value=user_value)
             sheet.cell(row=user_insert, column=col_idx_user).fill = light_blue_fill
             sheet.cell(row=user_insert, column=col_idx_user).font = user_title_font
+        # thêm dòng title
         for col_idx,column_name_value in enumerate(row_column_name,1):
             sheet.cell(row=title_insert, column=col_idx, value=column_name_value)
             sheet.cell(row=title_insert, column=col_idx).fill = dark_blue_fill
             sheet.cell(row=title_insert, column=col_idx).font = title_font
-
+            for green_index in column_positions_light_green_fill:
+                if green_index==col_idx:
+                    sheet.cell(row=title_insert, column=green_index).fill = light_green_fill
+            for blue_index in column_positions_light_blue_fill:
+                if blue_index==col_idx:
+                    sheet.cell(row=title_insert, column=blue_index).fill = light_blue_fill
 
         if(insert_index!=0):
              blank_insert = insert_index+added_sheet_row+2
@@ -275,6 +315,24 @@ def formatKPIExcelSheet(file_path) -> None:
              added_sheet_row+=3       
         else:
              added_sheet_row+=2
+
+    # Biến trạng thái
+    merging = False
+    merge_start = None
+
+    # lấy vị trí cột loại để merge các cell 
+    merge_column_position = title_df.columns.get_loc(type)
+
+    # Duyệt qua các dòng trong cột "loại"
+    for row_index, row in enumerate(sheet.iter_rows(min_col=merge_column_position, max_col=merge_column_position, values_only=True), start=1):
+        if row[0] =='KPI' or row[0]=='OKR':
+            if not merging:
+                merging = True
+                merge_start = row_index
+        else : 
+            if merging:
+                merging = False
+                sheet.merge_cells(start_row=merge_start, start_column=1, end_row=row_index - 1, end_column=1)
 
     # Thiết lập tự động tăng kích thước các cột
     # for col in sheet.columns:
@@ -309,17 +367,16 @@ def formatKPIExcelSheet(file_path) -> None:
         # Auto-adjust row height for all rows in the worksheet
         for row in sheet.iter_rows():
             sheet.row_dimensions[row[0].row].auto_size = True
-    
-            
+        
     # Define a dictionary to store the desired column widths
     # column_widths = {'KR phòng': 20, 'KR team': 20, 'KR cá nhân': 20, 'Note': 20}  
 
     # lấy vị trí các cột cần mở rộng khi align bằng openpyxl
-    column_names_30 = ['KR phòng', 'KR team', 'KR cá nhân', 'Công thức tính', 'Note']
-    column_positions_30 = [names_df.columns.get_loc(col_name) for col_name in column_names_30]
+    column_names_30 = [krp, krt, krc, ctt, note]
+    column_positions_30 = [title_df.columns.get_loc(col_name) for col_name in column_names_30]
 
-    column_names_20 = ['Loại', et, rt]
-    column_positions_20 = [names_df.columns.get_loc(col_name) for col_name in column_names_20]
+    column_names_20 = [ type, et, rt]
+    column_positions_20 = [title_df.columns.get_loc(col_name) for col_name in column_names_20]
 
     # Update the column widths
     for index in column_positions_30:
@@ -350,14 +407,19 @@ def synthesizeExcelFilebySheet(listDirectory,targetDirectory,levels) -> None:
     for file_name,level in zip(listDirectory,levels):
         # Mở file Excel gốc
         wb_original = openpyxl.load_workbook(file_name)
-        # Chọn sheet trong file Excel gốc (ở đây giả sử sheet có tên là 'Sheet1')
+        # Chọn sheet trong file Excel gốc 
         sheet_original = wb_original.active 
-        
-        # Tạo một sheet mới trong workbook tổng hợp
-        if(level==0):
-            sheet_combined = wb_combined.create_sheet(title=f"nhóm SVCNTS")
-        else:
-            sheet_combined = wb_combined.create_sheet(title=f"nhóm L{level}")
+        for level in levels:
+            # Tạo một sheet mới trong workbook tổng hợp có title phù hợp với level của nhân viên trong sheet
+            title=''
+            if(level==0):
+                title="nhóm SVCNTS"
+            else:
+                title=f"nhóm L{level}"
+            if title in file_name:   
+                sheet_combined = wb_combined.create_sheet(title)
+            else:
+                continue        
         # Lặp qua từng hàng và cột trong sheet gốc
         for row in sheet_original.iter_rows():
             for cell in row:
@@ -399,7 +461,29 @@ def synthesizeExcelFilebySheet(listDirectory,targetDirectory,levels) -> None:
         # Sao chép độ rộng cột từ sheet gốc sang sheet tổng hợp
         for col in sheet_original.column_dimensions:
             sheet_combined.column_dimensions[col] = sheet_original.column_dimensions[col]
-        
+
+        # Lấy danh sách các vùng merge
+        merged_ranges = sheet_original.merged_cells.ranges
+        # print("merged_ranges:",merged_ranges)
+        # Loop through each merged cell range
+        for merged_range in merged_ranges:
+            # Extract the start and end row indices from the range string
+            start_col, start_row, end_col, end_row = range_boundaries(merged_range.coord)
+            # print("coordination:",start_row, start_col, end_row, end_col)
+            
+            # Merge the cells in the range
+            sheet_combined.merge_cells(start_row=start_row, start_column=start_col, end_row=end_row, end_column=end_col)
+
+        # # Duyệt qua các cell trong worksheet cũ
+        # for row in sheet_original.iter_rows(min_row=1, max_row=sheet_original.max_row, min_col=1, max_col=sheet_original.max_column):
+        #     for cell in row:
+        #         # Nếu cell thuộc vùng merge
+        #         if cell.coordinate in merged_ranges:
+        #             # Lấy giá trị của vùng merge
+        #             merged_value = sheet_original[cell.coordinate].value
+        #             # Gán giá trị của vùng merge cho tất cả các cell trong vùng merge
+        #             for merged_cell in sheet_original[merged_ranges[0]]:
+        #                 sheet_combined.cell(row=merged_cell.row, column=merged_cell.column, value=merged_value)
 
     # Xóa sheet mặc định trong Workbook tổng hợp
     if 'Sheet' in wb_combined.sheetnames:
